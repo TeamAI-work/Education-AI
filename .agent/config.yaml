@@ -1,0 +1,4 @@
+# Project Agent Config for Education-AI
+version: 1.0
+agent_type: project_agent
+parent: Office Dude
