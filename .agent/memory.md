@@ -47,8 +47,9 @@ When user says "update the brain":
 1. Update `docs/Roadmap.md` and `docs/Tasks.md` with completed tasks.
 2. Update `.agent/state.json` and `.agent/memory.md`.
 3. Update Second Brain: `f:/GMS Work/Second Brain/Projects/Office Projects/Education-AI/`.
-4. **MANDATORY**: End response with a **High-Fidelity Daily Engineering Progress Report** designed for a Reporting Head. 
-   - **Structure**: Exactly **3 high-impact lines** (1. Infrastructure/Data, 2. Technical/Architecture, 3. Impact/Next Phase).
+4. **MANDATORY**: End response with:
+   - **GitHub Commit Message**: A copyable, clean semantic git commit message detailing the day's changes.
+   - **High-Fidelity Daily Engineering Progress Report**: Exactly **3 high-impact lines** (1. Infrastructure/Data, 2. Technical/Architecture, 3. Impact/Next Phase).
    - **Tone**: Professional, technical, and extremely concise. Focus on "impressing" management with dense technical keywords.
 
 ### "What phase are we in?" — Quick Reference

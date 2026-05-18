@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Sparkles } from 'lucide-react';
+import { Upload, Sparkles, ChevronLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // All emojis as Unicode escapes
 const SUGGESTIONS = [
@@ -14,6 +15,7 @@ const SUGGESTIONS = [
 export default function ShowAndTell() {
   const [preview, setPreview] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  const navigate = useNavigate();
 
   const handleFile = (file) => {
     if (!file?.type.startsWith('image/')) return;
@@ -24,11 +26,17 @@ export default function ShowAndTell() {
 
   return (
     <div
-      className="font-sans overflow-hidden flex flex-col"
+      className="font-sans overflow-hidden flex flex-col relative"
       style={{ width: '100vw', height: '100dvh', background: 'linear-gradient(135deg,#1a0d2e,#2e0d1a,#0d1a2e)' }}
     >
+      {/* Back button */}
+      <div className="absolute left-4 top-4 md:left-6 md:top-5 z-50 cursor-pointer flex gap-1.5 items-center transition-all group" onClick={() => navigate(-1)}>
+        <ChevronLeft className="text-white/60 group-hover:text-white transition-colors w-8 h-8 bg-white/5 rounded-xl border border-white/8 p-1" /> 
+        <span className="text-white/60 group-hover:text-white font-bold text-xs md:text-sm transition-colors">Back</span>
+      </div>
+
       {/* HEADER */}
-      <div className="flex-shrink-0 text-center pt-6 pb-3">
+      <div className="flex-shrink-0 text-center pt-14 md:pt-6 pb-3">
         <motion.div
           animate={{ y: [0, -8, 0], rotate: [-4, 4, -4] }}
           transition={{ duration: 3, repeat: Infinity }}
@@ -51,8 +59,8 @@ export default function ShowAndTell() {
           onDrop={e => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
           className="flex-1 relative cursor-pointer rounded-3xl overflow-hidden min-h-0 block"
           style={{
-            border: `2.5px dashed ${dragOver ? '#00D166' : 'rgba(255,255,255,0.2)'}`,
-            background: dragOver ? 'rgba(0,209,102,0.07)' : 'rgba(255,255,255,0.03)',
+            border: `2.5px dashed ${dragOver ? '#FF9F1C' : 'rgba(255,255,255,0.2)'}`,
+            background: dragOver ? 'rgba(255,159,28,0.07)' : 'rgba(255,255,255,0.03)',
             transition: 'border-color 0.2s, background 0.2s',
           }}
         >

@@ -55,7 +55,7 @@ export default function Sidebar() {
       >
         {/* Logo Section */}
         <div className="p-6 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-[#00D166] flex items-center justify-center shadow-[0_0_15px_rgba(0,209,102,0.4)]">
+          <div className="w-10 h-10 rounded-xl bg-[#FF9F1C] flex items-center justify-center shadow-[0_0_15px_rgba(255,159,28,0.4)]">
             <span className="text-white font-black text-xl">A</span>
           </div>
           {isOpen && (
@@ -78,9 +78,9 @@ export default function Sidebar() {
                 key={item.label}
                 onClick={() => navigate(item.path)}
                 className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all duration-200 group relative
-                  ${isActive ? 'bg-white/10 text-[#00D166]' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                  ${isActive ? 'bg-white/10 text-[#FF9F1C]' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
               >
-                <item.icon size={24} className={isActive ? 'text-[#00D166]' : 'group-hover:text-white'} />
+                <item.icon size={24} className={isActive ? 'text-[#FF9F1C]' : 'group-hover:text-white'} />
                 {isOpen && (
                   <motion.span 
                     initial={{ opacity: 0 }}
@@ -93,7 +93,7 @@ export default function Sidebar() {
                 {isActive && (
                   <motion.div 
                     layoutId="activeTab"
-                    className="absolute left-0 w-1 h-6 bg-[#00D166] rounded-r-full"
+                    className="absolute left-0 w-1 h-6 bg-[#FF9F1C] rounded-r-full"
                   />
                 )}
               </button>

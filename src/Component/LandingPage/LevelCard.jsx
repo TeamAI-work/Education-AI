@@ -18,7 +18,7 @@ const floatingIcons = {
 };
 
 const colorVars = {
-  1: { text: 'text-[#00D166]', bg: 'bg-[#00D166]', glow: 'rgba(0,209,102,0.3)' },
+  1: { text: 'text-[#FF9F1C]', bg: 'bg-[#FF9F1C]', glow: 'rgba(255,159,28,0.3)' },
   2: { text: 'text-[#4ECDC4]', bg: 'bg-[#4ECDC4]', glow: 'rgba(78,205,196,0.3)' },
   3: { text: 'text-[#45B7D1]', bg: 'bg-[#45B7D1]', glow: 'rgba(69,183,209,0.3)' },
   4: { text: 'text-[#6C5CE7]', bg: 'bg-[#6C5CE7]', glow: 'rgba(108,92,231,0.3)' },
