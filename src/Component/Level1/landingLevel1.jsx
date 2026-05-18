@@ -1,4 +1,4 @@
-﻿import { motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Rocket, Star, Sparkles, Cloud, Sun, Heart, Music, Ghost } from 'lucide-react';
 
@@ -71,7 +71,7 @@ const SmileyMascot = () => (
     <motion.div
       animate={{ rotate: 360 }}
       transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-      className="absolute -inset-4 border-2 border-dashed border-[#00D166]/30 rounded-full"
+      className="absolute -inset-4 border-2 border-dashed border-[#FF9F1C]/30 rounded-full"
     />
   </motion.div>
 );
@@ -81,11 +81,11 @@ export default function LandingLevel1() {
   const decorations = [
     { icon: Star, x: 10, y: 15, color: '#FFD93D', size: 32 },
     { icon: Cloud, x: 80, y: 10, color: '#FFFFFF', size: 48 },
-    { icon: Sparkles, x: 20, y: 70, color: '#00D166', size: 28 },
+    { icon: Sparkles, x: 20, y: 70, color: '#FF9F1C', size: 28 },
     { icon: Heart, x: 75, y: 65, color: '#FF8AAE', size: 24 },
     { icon: Sun, x: 50, y: 5, color: '#FFD93D', size: 64 },
     { icon: Music, x: 5, y: 80, color: '#4ECDC4', size: 30 },
-    { icon: Rocket, x: 85, y: 80, color: '#00D166', size: 40 },
+    { icon: Rocket, x: 85, y: 80, color: '#FFD93D', size: 40 },
     { icon: Ghost, x: 40, y: 85, color: '#A29BFE', size: 24 },
   ];
 
@@ -115,7 +115,7 @@ export default function LandingLevel1() {
           className="mb-8"
         >
           <h1 className="text-6xl md:text-8xl font-black mb-4 tracking-tight">
-            <span className="text-[#00D166] drop-shadow-[0_0_15px_rgba(0,209,102,0.5)]">HEY</span>
+            <span className="text-[#FF9F1C] drop-shadow-[0_0_15px_rgba(255,159,28,0.5)]">HEY</span>
             <br />
             <span className="text-white">EXPLORER!</span>
           </h1>
@@ -135,23 +135,23 @@ export default function LandingLevel1() {
         <div className="flex justify-center">
           <div className="relative group">
             {/* Button Glow Effect */}
-            <div className="absolute inset-0 bg-[#00D166] blur-2xl opacity-40 group-hover:opacity-70 transition-opacity duration-500 rounded-full scale-90" />
+            <div className="absolute inset-0 bg-[#FF9F1C] blur-2xl opacity-40 group-hover:opacity-70 transition-opacity duration-500 rounded-full scale-90" />
             
             <motion.button
               whileHover={{ scale: 1.1, rotate: -1 }}
               whileTap={{ scale: 0.95 }}
               animate={{ 
                 boxShadow: [
-                  "0 0 0px rgba(0,209,102,0)",
-                  "0 0 40px rgba(0,209,102,0.4)",
-                  "0 0 0px rgba(0,209,102,0)"
+                  "0 0 0px rgba(255,159,28,0)",
+                  "0 0 40px rgba(255,159,28,0.4)",
+                  "0 0 0px rgba(255,159,28,0)"
                 ]
               }}
               transition={{ 
                 boxShadow: { duration: 2, repeat: Infinity }
               }}
               onClick={() => navigate('/level1/dashboard')}
-              className="relative px-12 py-6 bg-[#00D166] hover:bg-[#00b357] text-white rounded-full text-3xl font-black shadow-2xl transition-colors duration-300 flex items-center gap-4 border-4 border-white/20"
+              className="relative px-12 py-6 bg-[#FF9F1C] hover:bg-[#e68a00] text-white rounded-full text-3xl font-black shadow-2xl transition-colors duration-300 flex items-center gap-4 border-4 border-white/20"
             >
               LET'S GO!
               <Rocket className="w-10 h-10 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform duration-300" />
@@ -174,7 +174,7 @@ export default function LandingLevel1() {
       </motion.div>
 
       {/* Floating Rainbow Overlay (Subtle) */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-10 bg-[radial-gradient(circle_at_50%_50%,_rgba(0,209,102,0.2),_transparent_70%)]" />
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-10 bg-[radial-gradient(circle_at_50%_50%,_rgba(255,159,28,0.2),_transparent_70%)]" />
 
     </div>
   );

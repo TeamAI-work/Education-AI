@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --color-level-1: #00D166;
+  --color-level-1: #FF9F1C;
   --color-level-2: #4ECDC4;
   --color-level-3: #45B7D1;
   --color-level-4: #6C5CE7;
@@ -56,3 +56,15 @@ body {
   0%, 100% { transform: translateY(0px); }
   50%       { transform: translateY(-8px); }
 }
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+

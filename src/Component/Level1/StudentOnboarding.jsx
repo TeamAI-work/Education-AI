@@ -72,7 +72,7 @@ export default function StudentOnboarding({ onComplete }) {
                   onKeyDown={e => e.key === 'Enter' && handleNameNext()}
                   autoFocus
                   maxLength={30}
-                  className="w-full px-5 py-4 rounded-2xl text-xl font-bold text-gray-800 text-center outline-none border-4 border-transparent focus:border-[#00D166] transition-all"
+                  className="w-full px-5 py-4 rounded-2xl text-xl font-bold text-gray-800 text-center outline-none border-4 border-transparent focus:border-[#FF9F1C] transition-all"
                   style={{ background: 'rgba(0,0,0,0.05)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.08)' }}
                 />
                 <motion.button
@@ -80,7 +80,7 @@ export default function StudentOnboarding({ onComplete }) {
                   onClick={handleNameNext}
                   disabled={name.trim().length < 2}
                   className="mt-5 w-full py-4 rounded-2xl text-white text-xl font-black disabled:opacity-30 transition-all"
-                  style={{ background: 'linear-gradient(135deg,#00D166,#00FF88)', boxShadow: '0 4px 20px rgba(0,209,102,0.4)' }}
+                  style={{ background: 'linear-gradient(135deg,#FF9F1C,#FFD93D)', boxShadow: '0 4px 20px rgba(255,159,28,0.4)' }}
                 >
                   Next &rarr;
                 </motion.button>
@@ -112,7 +112,7 @@ export default function StudentOnboarding({ onComplete }) {
                       onClick={() => setSelectedAvatar(av)}
                       className={`text-3xl p-2 rounded-2xl transition-all border-2 ${
                         selectedAvatar === av
-                          ? 'bg-[#00D166]/20 border-[#00D166]'
+                          ? 'bg-[#FF9F1C]/20 border-[#FF9F1C]'
                           : 'bg-gray-100 border-transparent hover:bg-gray-200'
                       }`}
                     >
@@ -126,7 +126,7 @@ export default function StudentOnboarding({ onComplete }) {
                   onClick={handleDone}
                   disabled={loading}
                   className="w-full py-4 rounded-2xl text-white text-xl font-black flex items-center justify-center gap-3 disabled:opacity-60 transition-all"
-                  style={{ background: 'linear-gradient(135deg,#00D166,#00FF88)', boxShadow: '0 4px 20px rgba(0,209,102,0.4)' }}
+                  style={{ background: 'linear-gradient(135deg,#FF9F1C,#FFD93D)', boxShadow: '0 4px 20px rgba(255,159,28,0.4)' }}
                 >
                   {loading
                     ? <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}>{'\u23F3'}</motion.span>

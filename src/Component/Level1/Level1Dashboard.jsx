@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Star, BookOpen, Zap, Trophy, ChevronRight } from 'lucide-react';
+import { Star, BookOpen, Zap, Trophy, ChevronRight, PenTool } from 'lucide-react';
 import { useStudentProfile } from '../../lib/useStudentProfile';
 import StudentOnboarding from './StudentOnboarding';
+import { getDailyLettersCount } from '../../lib/cookieUtils';
 
 // All emojis as Unicode escapes — ASCII-safe, immune to encoding issues
 const FEATURES = [
@@ -12,11 +13,10 @@ const FEATURES = [
     title: 'Alphabet Tracing',
     description: 'Write letters A\u2013Z and check your score!',
     emoji: '\u270F\uFE0F',
-    bg: 'linear-gradient(135deg,#00D166,#00FF88)',
-    shadow: 'rgba(0,209,102,0.4)',
+    bg: 'linear-gradient(135deg,#FF9F1C,#FFD93D)',
+    shadow: 'rgba(255,159,28,0.4)',
     status: 'ready',
     path: '/level1/interactive-tracing',
-    stars: '\u2B50\u2B50\u2B50',
   },
   {
     id: 'showandtell',
@@ -27,7 +27,6 @@ const FEATURES = [
     shadow: 'rgba(255,138,174,0.4)',
     status: 'ready',
     path: '/level1/show-and-tell',
-    stars: '\u2B50\u2B50',
   },
   {
     id: 'math',
@@ -38,7 +37,6 @@ const FEATURES = [
     shadow: 'rgba(162,155,254,0.4)',
     status: 'ready',
     path: '/level1/living-math',
-    stars: '\u2B50\u2B50\u2B50',
   },
   {
     id: 'badges',
@@ -128,15 +126,15 @@ function FeatureCard({ feature, onClick, index }) {
 
 function StatPill({ icon: Icon, label, value, color }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
+    <div className="flex items-center gap-1.5 px-2 py-1.5 md:px-3 md:py-2 rounded-lg md:rounded-xl flex-shrink-0"
       style={{ background: `${color}15`, border: `1px solid ${color}30` }}>
-      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+      <div className="w-5.5 h-5.5 md:w-7 md:h-7 rounded md:rounded-lg flex items-center justify-center flex-shrink-0"
         style={{ background: `${color}22` }}>
-        <Icon size={14} style={{ color }} />
+        <Icon className="w-3 h-3 md:w-3.5 md:h-3.5" style={{ color }} />
       </div>
       <div>
-        <div className="text-white/40 text-[9px] font-bold uppercase tracking-wider">{label}</div>
-        <div className="text-white font-black text-sm leading-none">{value}</div>
+        <div className="text-white/40 text-[7px] md:text-[9px] font-bold uppercase tracking-wider leading-none mb-0.5">{label}</div>
+        <div className="text-white font-black text-xs md:text-sm leading-none">{value}</div>
       </div>
     </div>
   );
@@ -145,6 +143,7 @@ function StatPill({ icon: Icon, label, value, color }) {
 export default function Level1Dashboard() {
   const navigate = useNavigate();
   const { profile, streak, stats, loading, needsOnboarding, createProfile, refetch } = useStudentProfile();
+  const dailyLettersCount = getDailyLettersCount();
 
   useEffect(() => { refetch(); }, []);
 
@@ -153,7 +152,7 @@ export default function Level1Dashboard() {
       <div className="h-screen w-screen flex items-center justify-center"
         style={{ background: 'linear-gradient(135deg,#1a0533,#0d1b4b,#0a2e1a)' }}>
         <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
-          className="text-5xl">{'\u2B50'}</motion.div>
+          className="text-5xl">⭐</motion.div>
       </div>
     );
   }
@@ -166,11 +165,120 @@ export default function Level1Dashboard() {
         {needsOnboarding && <StudentOnboarding onComplete={createProfile} />}
       </AnimatePresence>
 
+      {/* ── MOBILE LAYOUT (< md) ─────────────────────────────── */}
       <div
-        className="font-sans relative overflow-hidden flex"
+        className="md:hidden font-sans relative overflow-y-auto"
+        style={{ width: '100vw', minHeight: '100dvh', background: 'linear-gradient(135deg,#1a0533,#0d1b4b 55%,#0a2e1a)' }}
+      >
+        {/* Floating decor */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {FLOATERS.map((f, i) => (
+            <div key={i} className="absolute text-xl select-none"
+              style={{ left: `${f.l}%`, top: `${f.t}%`, opacity: 0.08,
+                animation: `floatBob ${4 + i * 0.5}s ease-in-out ${i * 0.4}s infinite` }}>
+              {f.e}
+            </div>
+          ))}
+        </div>
+
+        {/* ── TOPBAR ── */}
+        <div className="sticky top-0 z-20 px-4 pt-4 pb-3"
+          style={{ background: 'rgba(15,12,30,0.85)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="flex items-center gap-3">
+            {/* Avatar */}
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg,#FF9F1C,#FFD93D)', boxShadow: '0 0 14px rgba(255,159,28,0.3)' }}>
+              {profile?.avatar_url || '🧒'}
+            </div>
+
+            {/* Name + grade */}
+            <div className="flex-1 min-w-0">
+              <div className="text-white font-black text-sm leading-tight truncate">
+                {profile?.full_name?.split(' ')[0] || 'Explorer'}
+              </div>
+              <div className="text-[9px] font-black px-1.5 py-0.5 rounded-full mt-0.5 inline-block"
+                style={{ background: 'linear-gradient(135deg,#FF9F1C,#FFD93D)', color: '#4a2c00' }}>
+                Grade 1–4 🌟
+              </div>
+            </div>
+
+            {/* Streak badge */}
+            <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl flex-shrink-0"
+              style={{ background: 'rgba(255,107,53,0.15)', border: '1px solid rgba(255,107,53,0.3)' }}>
+              <span className="text-base">🔥</span>
+              <div>
+                <div className="text-white/40 text-[7px] font-bold uppercase leading-none">Streak</div>
+                <div className="text-orange-400 font-black text-xs leading-none">{streak?.current_streak ?? 0}d</div>
+              </div>
+            </div>
+
+            {/* Lock button */}
+            <button onClick={() => navigate('/settings')}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-base bg-white/5 border border-white/10 flex-shrink-0">
+              🔒
+            </button>
+          </div>
+
+          {/* Stats row */}
+          <div className="flex gap-2 mt-3">
+            {[
+              { icon: Star, label: 'Stars', value: stats?.totalActivities ?? 0, color: '#FFD93D' },
+              { icon: PenTool, label: 'Letters', value: dailyLettersCount, color: '#FF9F1C' },
+              { icon: Zap, label: 'Best', value: stats?.bestScore ? `${stats.bestScore}%` : '—', color: '#A29BFE' },
+            ].map(({ icon: Icon, label, value, color }) => (
+              <div key={label} className="flex-1 flex items-center gap-1.5 px-2.5 py-2 rounded-xl"
+                style={{ background: `${color}12`, border: `1px solid ${color}28` }}>
+                <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color }} />
+                <div>
+                  <div className="text-[7px] font-bold uppercase tracking-wide leading-none" style={{ color: `${color}99` }}>{label}</div>
+                  <div className="text-white font-black text-xs leading-tight">{value}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Progress bar */}
+          {/* <div className="mt-2.5">
+            <div className="flex justify-between text-[9px] font-bold mb-1">
+              <span className="text-white/35">Today's Progress</span>
+              <span style={{ color: '#FF9F1C' }}>{Math.min(stats?.totalActivities ?? 0, 3)}/3</span>
+            </div>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${activityPct}%` }}
+                transition={{ delay: 0.4, duration: 1, ease: 'easeOut' }}
+                className="h-full rounded-full"
+                style={{ background: 'linear-gradient(90deg,#FF9F1C,#FFD93D)' }}
+              />
+            </div>
+          </div> */}
+        </div>
+
+        {/* ── GREETING ── */}
+        <div className="px-4 pt-5 pb-3 relative z-10">
+          <h1 className="text-2xl font-black text-white leading-tight">
+            Hey {profile?.full_name?.split(' ')[0] || 'Explorer'}! 👋
+          </h1>
+          <p className="text-white/45 text-xs font-medium mt-0.5">
+            Pick an activity and let's have some fun! 🎉
+          </p>
+        </div>
+
+        {/* ── ACTIVITY CARDS ── */}
+        <div className="px-4 pb-8 pt-2 grid grid-cols-2 gap-3 relative z-10" style={{ isolation: 'isolate' }}>
+          {FEATURES.map((f, i) => (
+            <FeatureCard key={f.id} feature={f} index={i} onClick={path => navigate(path)} />
+          ))}
+        </div>
+      </div>
+
+      {/* ── DESKTOP LAYOUT (≥ md) ─────────────────────────────── */}
+      <div
+        className="hidden md:flex font-sans relative overflow-hidden flex-row"
         style={{ width: '100vw', height: '100dvh', background: 'linear-gradient(135deg,#1a0533,#0d1b4b 55%,#0a2e1a)' }}
       >
-        {/* Floating decor — CSS only */}
+        {/* Floating decor */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {FLOATERS.map((f, i) => (
             <div key={i} className="absolute text-xl select-none"
@@ -195,17 +303,15 @@ export default function Level1Dashboard() {
 
           {/* Avatar */}
           <div className="flex flex-col items-center gap-2 py-3 px-5">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl"
-              style={{ background: 'linear-gradient(135deg,#00D166,#00FF88)', boxShadow: '0 0 20px rgba(0,209,102,0.35)', animation: 'bobSpin 3.5s ease-in-out infinite' }}
-            >
-              {profile?.avatar_url || '\u{1F9D2}'}
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl"
+              style={{ background: 'linear-gradient(135deg,#FF9F1C,#FFD93D)', boxShadow: '0 0 20px rgba(255,159,28,0.35)', animation: 'bobSpin 3.5s ease-in-out infinite' }}>
+              {profile?.avatar_url || '🧒'}
             </div>
             <div className="text-center">
               <div className="text-white font-black text-sm leading-tight">{profile?.full_name || 'Explorer'}</div>
               <div className="text-[10px] font-black px-2 py-0.5 rounded-full mt-1"
-                style={{ background: 'linear-gradient(135deg,#00D166,#00FF88)', color: '#004d25' }}>
-                Grade 1&ndash;4 {'\u{1F31F}'}
+                style={{ background: 'linear-gradient(135deg,#FF9F1C,#FFD93D)', color: '#4a2c00' }}>
+                Grade 1&ndash;4 🌟
               </div>
             </div>
           </div>
@@ -214,7 +320,7 @@ export default function Level1Dashboard() {
           <div className="px-4">
             <div className="flex items-center gap-2 p-3 rounded-xl"
               style={{ background: 'linear-gradient(135deg,rgba(255,107,53,0.18),rgba(255,140,0,0.08))', border: '1px solid rgba(255,107,53,0.3)', animation: 'pulseSlow 2.5s ease-in-out infinite' }}>
-              <span className="text-2xl">{'\u{1F525}'}</span>
+              <span className="text-2xl">🔥</span>
               <div>
                 <div className="text-white/40 text-[9px] font-bold uppercase tracking-wider">Day Streak</div>
                 <div className="text-orange-400 font-black text-lg leading-none">{streak?.current_streak ?? 0} days!</div>
@@ -224,16 +330,16 @@ export default function Level1Dashboard() {
 
           {/* Stats */}
           <div className="flex flex-col gap-2 px-4 mt-3">
-            <StatPill icon={Star}     label="Stars Earned" value={stats?.totalActivities ?? 0}                    color="#FFD93D" />
-            <StatPill icon={BookOpen} label="Letters Done" value={stats?.alphabetCount ?? 0}                      color="#00D166" />
-            <StatPill icon={Zap}      label="Best Score"   value={stats?.bestScore ? `${stats.bestScore}%` : '—'} color="#A29BFE" />
+            <StatPill icon={Star}    label="Stars Earned"  value={stats?.totalActivities ?? 0}                    color="#FFD93D" />
+            <StatPill icon={PenTool} label="Letters Today" value={dailyLettersCount}                               color="#FF9F1C" />
+            <StatPill icon={Zap}     label="Best Score"    value={stats?.bestScore ? `${stats.bestScore}%` : '—'} color="#A29BFE" />
           </div>
 
           {/* Progress */}
           <div className="px-4 mt-3">
             <div className="flex justify-between text-[9px] font-bold mb-1">
-              <span className="text-white/40">Today&apos;s Progress</span>
-              <span style={{ color: '#00D166' }}>{Math.min(stats?.totalActivities ?? 0, 3)}/3</span>
+              <span className="text-white/40">Today's Progress</span>
+              <span style={{ color: '#FF9F1C' }}>{Math.min(stats?.totalActivities ?? 0, 3)}/3</span>
             </div>
             <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
               <motion.div
@@ -241,23 +347,31 @@ export default function Level1Dashboard() {
                 animate={{ width: `${activityPct}%` }}
                 transition={{ delay: 0.6, duration: 1, ease: 'easeOut' }}
                 className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg,#00D166,#00FF88,#FFD93D)' }}
+                style={{ background: 'linear-gradient(90deg,#FF9F1C,#FFD93D,#FF8C00)' }}
               />
             </div>
           </div>
 
           {/* Tip */}
-          <div className="px-4 mt-auto mb-4">
+          <div className="px-4 mt-auto mb-3">
             <div className="p-3 rounded-xl text-xs"
-              style={{ background: 'rgba(0,209,102,0.07)', border: '1px solid rgba(0,209,102,0.18)' }}>
-              <span className="text-[#00D166] font-bold">{'\u{1F4A1}'} Tip: </span>
-              <span className="text-white/50">Practice writing &quot;G&quot; today!</span>
+              style={{ background: 'rgba(255,159,28,0.07)', border: '1px solid rgba(255,159,28,0.18)' }}>
+              <span className="text-[#FF9F1C] font-bold">💡 Tip: </span>
+              <span className="text-white/50">Practice writing "G" today!</span>
             </div>
+          </div>
+
+          {/* Parent Settings */}
+          <div className="px-4 mb-4">
+            <button onClick={() => navigate('/settings')}
+              className="w-full py-2.5 rounded-xl text-xs font-black text-white/60 hover:text-white bg-white/5 hover:bg-white/10 border border-white/8 transition-all flex items-center justify-center gap-1.5">
+              <span>🔒</span> Parent Settings
+            </button>
           </div>
         </div>
 
         {/* MAIN */}
-        <div className="flex-1 flex flex-col relative z-10 overflow-hidden p-5 gap-4">
+        <div className="flex-1 flex flex-col relative z-10 p-5 gap-4" style={{ overflow: 'visible' }}>
           <motion.div
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -265,17 +379,17 @@ export default function Level1Dashboard() {
           >
             <div>
               <h1 className="text-3xl font-black text-white leading-tight">
-                Hey {profile?.full_name?.split(' ')[0] || 'Explorer'}! {'\u{1F44B}'}
+                Hey {profile?.full_name?.split(' ')[0] || 'Explorer'}! 👋
               </h1>
               <p className="text-white/45 text-sm font-medium mt-0.5">
-                Pick an activity and let&apos;s have some fun! {'\u{1F389}'}
+                Pick an activity and let's have some fun! 🎉
               </p>
             </div>
             <Trophy size={28} className="text-yellow-400 flex-shrink-0" />
           </motion.div>
 
           {/* Feature grid */}
-          <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
+          <div className="grid grid-cols-2 gap-4 flex-1 min-h-0 pb-4 pt-2 px-1" style={{ overflow: 'visible' }}>
             {FEATURES.map((f, i) => (
               <FeatureCard key={f.id} feature={f} index={i} onClick={path => navigate(path)} />
             ))}
