@@ -6,7 +6,8 @@
   --color-level-3: #45B7D1;
   --color-level-4: #6C5CE7;
   
-  --font-sans: "Outfit", "Inter", system-ui, sans-serif;
+  --font-sans: "Outfit", "Inter", system-ui, -apple-system, sans-serif,
+               "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 
@@ -19,6 +20,9 @@
 body {
   margin: 0;
   overflow-x: hidden;
+  /* Ensure emoji fonts are always available as fallback */
+  font-family: "Outfit", "Inter", system-ui, -apple-system, sans-serif,
+               "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 .glass {
@@ -35,4 +39,20 @@ body {
 .glass-hover:hover {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ── CSS animations for decorative elements (GPU-composited, no JS overhead) ── */
+@keyframes floatBob {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-16px) rotate(6deg); }
+}
+
+@keyframes pulseSlow {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.06); }
+}
+
+@keyframes bobSpin {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
 }

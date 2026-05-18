@@ -1,15 +1,13 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCcw, ChevronLeft, ChevronRight, Star, RotateCcw } from 'lucide-react';
-
 import { LETTER_PATHS, alphabet } from '../../data/letterPaths';
+import { logActivity, updateStreak } from '../../lib/gamification';
+import { getStoredUserId } from '../../lib/useStudentProfile';
 
 const CANVAS_SIZE = 300;
-const PATH_TOLERANCE = 22; // Max distance (px) from path center to count as "on path"
+const PATH_TOLERANCE = 22;
 
-/** 
- * Samples N evenly spaced points along an SVG path element.
- */
 function samplePath(pathEl, count = 80) {
   const len = pathEl.getTotalLength();
   const points = [];
@@ -20,79 +18,87 @@ function samplePath(pathEl, count = 80) {
   return points;
 }
 
-/**
- * Returns the minimum distance from point P to a polyline defined by `points`.
- */
 function minDistToPath(px, py, points) {
   let minDist = Infinity;
   for (let i = 0; i < points.length - 1; i++) {
-    const ax = points[i].x,   ay = points[i].y;
+    const ax = points[i].x, ay = points[i].y;
     const bx = points[i+1].x, by = points[i+1].y;
     const dx = bx - ax, dy = by - ay;
     const lenSq = dx*dx + dy*dy;
-    let t = lenSq === 0 ? 0 : Math.max(0, Math.min(1, ((px-ax)*dx + (py-ay)*dy) / lenSq));
-    const closestX = ax + t*dx;
-    const closestY = ay + t*dy;
-    const d = Math.hypot(px - closestX, py - closestY);
+    const t = lenSq === 0 ? 0 : Math.max(0, Math.min(1, ((px-ax)*dx + (py-ay)*dy) / lenSq));
+    const d = Math.hypot(px - (ax + t*dx), py - (ay + t*dy));
     if (d < minDist) minDist = d;
   }
   return minDist;
 }
 
+// Confetti particle - uses Unicode escapes to avoid encoding issues
+const CONFETTI_EMOJIS = ['\u2B50', '\u{1F31F}', '\u2728', '\u{1F389}', '\u{1F38A}', '\u{1F4AB}', '\u{1F3C6}', '\u{1F308}'];
+
+function ConfettiParticle({ delay }) {
+  const emoji = CONFETTI_EMOJIS[Math.floor(Math.random() * CONFETTI_EMOJIS.length)];
+  const startX = Math.random() * 100;
+  return (
+    <motion.div
+      initial={{ opacity: 1, y: -20, x: `${startX}vw`, scale: 0 }}
+      animate={{ opacity: 0, y: '100vh', scale: 1.5, rotate: 360 }}
+      transition={{ duration: 2.5 + Math.random() * 1.5, delay, ease: 'easeIn' }}
+      className="fixed top-0 text-3xl pointer-events-none z-50 select-none"
+    >
+      {emoji}
+    </motion.div>
+  );
+}
+
 export default function AlphabetTracer() {
-  const canvasRef    = useRef(null);
-  const svgRef       = useRef(null);
-  const boundaryRef  = useRef(null);   // Off-screen mask: pixel is set if inside letter
-  const drawnPoints  = useRef([]);     // All points the user has drawn
+  const canvasRef      = useRef(null);
+  const svgRef         = useRef(null);
+  const boundaryRef    = useRef(null);
+  const drawnPoints    = useRef([]);
+  // Perf: cache expensive computations in refs
+  const refPointsCache = useRef([]);   // sampled guide points, computed once per letter
+  const canvasRect     = useRef(null); // cached getBoundingClientRect
+  const drawCount      = useRef(0);    // throttle progress updates
+
   const [isDrawing, setIsDrawing]       = useState(false);
   const [currentIdx, setCurrentIdx]     = useState(0);
-  const [result, setResult]             = useState(null); // null | { score, label }
-  const [progress, setProgress]         = useState(0);    // 0-100 real-time fill %
+  const [result, setResult]             = useState(null);
+  const [progress, setProgress]         = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [saving, setSaving]             = useState(false);
 
-  const letter = alphabet[currentIdx];
+  const letter     = alphabet[currentIdx];
   const letterData = LETTER_PATHS[letter];
 
-  // --- Get sampled reference points from the SVG paths ---
-  const getRefPoints = useCallback(() => {
-    if (!svgRef.current) return [];
-    const paths = svgRef.current.querySelectorAll('path[data-guide]');
-    let all = [];
-    paths.forEach(p => { all = all.concat(samplePath(p, 100)); });
-    return all;
-  }, [letter]);
-
-  // --- Build off-screen boundary mask from the SVG strokes ---
-  // We wait a tick so the SVG has rendered and guide paths are queryable.
+  // Build boundary mask + cache ref points once per letter
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!svgRef.current) return;
-
-      // Render all letter strokes (with generous thickness) into an off-screen canvas
       const mask = document.createElement('canvas');
       mask.width  = CANVAS_SIZE;
       mask.height = CANVAS_SIZE;
       const mCtx = mask.getContext('2d');
-      mCtx.lineCap  = 'round';
-      mCtx.lineJoin = 'round';
-
+      mCtx.lineCap = 'round'; mCtx.lineJoin = 'round';
       const paths = svgRef.current.querySelectorAll('path[data-guide]');
       paths.forEach(p => {
-        const d = p.getAttribute('d');
-        const path2d = new Path2D(d);
-        mCtx.lineWidth   = 55; // Allowed writing zone width
+        mCtx.lineWidth = 55;
         mCtx.strokeStyle = 'white';
-        mCtx.stroke(path2d);
+        mCtx.stroke(new Path2D(p.getAttribute('d')));
       });
-
-      // Store raw pixel data for fast lookup
       boundaryRef.current = mCtx.getImageData(0, 0, CANVAS_SIZE, CANVAS_SIZE).data;
+      // Cache ref points - computed ONCE per letter
+      let all = [];
+      paths.forEach(p => { all = all.concat(samplePath(p, 80)); });
+      refPointsCache.current = all;
+      canvasRect.current = null;
     }, 50);
     return () => clearTimeout(timer);
   }, [currentIdx]);
 
-  // --- Canvas setup ---
+  // Reset canvas on letter change
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
     canvas.width  = CANVAS_SIZE;
     canvas.height = CANVAS_SIZE;
     const ctx = canvas.getContext('2d');
@@ -106,24 +112,21 @@ export default function AlphabetTracer() {
     drawnPoints.current = [];
     setResult(null);
     setProgress(0);
+    setShowConfetti(false);
   }, [currentIdx]);
 
-  /** Returns true if (x, y) lies within the letter boundary mask */
   const isInsideBoundary = (x, y) => {
     const mask = boundaryRef.current;
-    if (!mask) return true; // If mask not ready yet, allow drawing
-    const px = Math.round(x);
-    const py = Math.round(y);
+    if (!mask) return true;
+    const px = Math.round(x), py = Math.round(y);
     if (px < 0 || py < 0 || px >= CANVAS_SIZE || py >= CANVAS_SIZE) return false;
-    const idx = (py * CANVAS_SIZE + px) * 4;
-    return mask[idx + 3] > 0; // Alpha channel: white pixels are the allowed zone
+    return mask[(py * CANVAS_SIZE + px) * 4 + 3] > 0;
   };
 
   const clearCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    canvas.getContext('2d').clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
   };
 
   const resetAll = () => {
@@ -131,30 +134,31 @@ export default function AlphabetTracer() {
     drawnPoints.current = [];
     setResult(null);
     setProgress(0);
+    setShowConfetti(false);
   };
 
-  // --- Drawing handlers ---
+  // Cache rect - only recalculate on stroke start or resize
   const getPos = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
+    if (!canvasRect.current) {
+      canvasRect.current = canvasRef.current.getBoundingClientRect();
+    }
+    const rect  = canvasRect.current;
     const scaleX = CANVAS_SIZE / rect.width;
     const scaleY = CANVAS_SIZE / rect.height;
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top)  * scaleY,
-    };
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
   };
 
   const startDraw = (e) => {
     e.preventDefault();
+    canvasRect.current = canvasRef.current.getBoundingClientRect();
+    drawCount.current = 0;
     const { x, y } = getPos(e);
     const ctx = canvasRef.current.getContext('2d');
-    ctx.beginPath();
-    ctx.moveTo(x, y);
+    ctx.beginPath(); ctx.moveTo(x, y);
     drawnPoints.current.push({ x, y });
-    setIsDrawing(true);
-    setResult(null);
+    setIsDrawing(true); setResult(null);
   };
 
   const draw = (e) => {
@@ -162,25 +166,26 @@ export default function AlphabetTracer() {
     if (!isDrawing) return;
     const { x, y } = getPos(e);
     const ctx = canvasRef.current.getContext('2d');
-
     if (isInsideBoundary(x, y)) {
-      // Inside the letter — draw and record
-      ctx.lineTo(x, y);
-      ctx.stroke();
+      ctx.lineTo(x, y); ctx.stroke();
       drawnPoints.current.push({ x, y });
     } else {
-      // Outside the letter — lift pen silently (no mark left)
-      ctx.beginPath();
-      ctx.moveTo(x, y);
+      ctx.beginPath(); ctx.moveTo(x, y);
     }
-
-    // Real-time progress calculation
-    const refPoints = getRefPoints();
-    if (refPoints.length > 0) {
-      const covered = refPoints.filter(rp =>
-        drawnPoints.current.some(dp => Math.hypot(dp.x - rp.x, dp.y - rp.y) < PATH_TOLERANCE)
-      ).length;
-      setProgress(Math.min(100, Math.round((covered / refPoints.length) * 100)));
+    // Throttle: recalculate progress every 8 points
+    drawCount.current++;
+    if (drawCount.current % 8 === 0) {
+      const refPoints = refPointsCache.current;
+      if (refPoints.length > 0) {
+        const pts = drawnPoints.current;
+        let covered = 0;
+        for (const rp of refPoints) {
+          for (const dp of pts) {
+            if (Math.hypot(dp.x - rp.x, dp.y - rp.y) < PATH_TOLERANCE) { covered++; break; }
+          }
+        }
+        setProgress(Math.min(100, Math.round((covered / refPoints.length) * 100)));
+      }
     }
   };
 
@@ -191,79 +196,111 @@ export default function AlphabetTracer() {
     canvasRef.current.getContext('2d').closePath();
   };
 
-  // --- Accuracy Calculation ---
-  const checkAccuracy = () => {
-    const refPoints = getRefPoints();
+  const checkAccuracy = async () => {
+    const refPoints = refPointsCache.current;
     if (refPoints.length === 0 || drawnPoints.current.length === 0) return;
 
-    // 1. Coverage: How many ref points did the student's stroke pass near?
+    const pts = drawnPoints.current;
     let covered = 0;
     for (const rp of refPoints) {
-      const dist = Math.min(...drawnPoints.current.map(dp => Math.hypot(dp.x - rp.x, dp.y - rp.y)));
-      if (dist < PATH_TOLERANCE) covered++;
+      for (const dp of pts) {
+        if (Math.hypot(dp.x - rp.x, dp.y - rp.y) < PATH_TOLERANCE) { covered++; break; }
+      }
     }
     const coverage = covered / refPoints.length;
 
-    // 2. Precision: How many of the student's points are ON the letter path?
     let onPath = 0;
-    for (const dp of drawnPoints.current) {
-      const dist = minDistToPath(dp.x, dp.y, refPoints);
-      if (dist < PATH_TOLERANCE) onPath++;
+    for (const dp of pts) {
+      if (minDistToPath(dp.x, dp.y, refPoints) < PATH_TOLERANCE) onPath++;
     }
-    const precision = onPath / drawnPoints.current.length;
+    const precision = pts.length > 0 ? onPath / pts.length : 0;
+    const score = Math.round((coverage * 0.7 + precision * 0.3) * 100);
 
-    // Final score: 60% coverage + 40% precision
-    const score = Math.round((coverage * 60 + precision * 40));
-    
-    let label, emoji;
-    if (score >= 80) { label = "Excellent!"; emoji = "🌟"; }
-    else if (score >= 60) { label = "Great Job!"; emoji = "⭐"; }
-    else if (score >= 40) { label = "Keep Trying!"; emoji = "💪"; }
-    else { label = "Try Again!"; emoji = "❤️"; }
+    let label = 'Keep Practising!';
+    let emoji = '\u{1F4AA}'; // flexed bicep
+    if      (score >= 80) { label = "Amazing! You're a Star!";  emoji = '\u{1F31F}'; }
+    else if (score >= 60) { label = 'Great Job! Keep Going!';   emoji = '\u2B50'; }
+    else if (score >= 40) { label = 'Nice Try! You Can Do It!'; emoji = '\u{1F4AA}'; }
 
     setResult({ score, label, emoji });
+    if (score >= 60) setShowConfetti(true);
+
+    const userId = getStoredUserId();
+    if (userId) {
+      setSaving(true);
+      await Promise.all([
+        logActivity(userId, 'alphabet_tracing', score),
+        updateStreak(userId),
+      ]);
+      setSaving(false);
+    }
   };
 
   const allStrokes = letterData.strokes.join(' ');
+  const scoreColor = result
+    ? result.score >= 80 ? '#00D166'
+      : result.score >= 60 ? '#FFD93D'
+      : result.score >= 40 ? '#FF8AAE'
+      : '#A29BFE'
+    : '#00D166';
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#0a0f1e] flex font-['Outfit',sans-serif]">
+    <div
+      className="font-['Outfit',sans-serif] relative overflow-hidden flex"
+      style={{ width: '100vw', height: '100dvh', background: 'linear-gradient(135deg,#0d2b1a,#1a0d2e,#0a1a2e)' }}
+    >
+      {/* Confetti */}
+      <AnimatePresence>
+        {showConfetti && Array.from({ length: 20 }).map((_, i) => (
+          <ConfettiParticle key={i} delay={i * 0.08} />
+        ))}
+      </AnimatePresence>
 
-      {/* ════════════════════════════════════════
-          LEFT PANEL — 65% — Drawing Canvas
-      ════════════════════════════════════════ */}
-      <div className="relative flex-[65] h-full bg-[#080d1a] border-r border-white/5 flex items-center justify-center">
-
-        {/* Subtle radial glow behind canvas */}
+      {/* LEFT: Drawing Canvas */}
+      <div
+        className="relative flex-[65] h-full flex items-center justify-center"
+        style={{ borderRight: '1.5px solid rgba(255,255,255,0.08)' }}
+      >
+        {/* Glow backdrop */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-[420px] h-[420px] bg-[#00D166]/5 rounded-full blur-3xl" />
+          <div className="w-[400px] h-[400px] rounded-full blur-3xl opacity-10"
+            style={{ background: 'radial-gradient(circle,#00D166,transparent)' }} />
         </div>
 
-        {/* The drawing area grows to fill the left panel */}
-        <div className="relative w-[min(65vw,580px)] aspect-square">
+        {/* Letter badge */}
+        <motion.div
+          key={letter}
+          initial={{ opacity: 0, y: -15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-5 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full font-black text-4xl"
+          style={{
+            background: 'linear-gradient(135deg,#00D166,#00FF88)',
+            boxShadow: '0 4px 20px rgba(0,209,102,0.5)',
+            color: '#004d25',
+          }}
+        >
+          {letter}
+        </motion.div>
 
-          {/* SVG Guide Layer */}
-          <svg
-            ref={svgRef}
+        <div className="relative w-[min(55vw,500px)] aspect-square">
+          {/* SVG Guide */}
+          <svg ref={svgRef}
             viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
             className="absolute inset-0 w-full h-full rounded-3xl"
             preserveAspectRatio="xMidYMid meet"
           >
             <rect width={CANVAS_SIZE} height={CANVAS_SIZE} rx="24"
-              fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-
-            {/* Ghost letter fill */}
+              fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" />
+            {/* Ghost fill */}
             <path d={allStrokes} fill="none"
-              stroke="rgba(255,255,255,0.04)" strokeWidth="60"
+              stroke="rgba(255,255,255,0.06)" strokeWidth="60"
               strokeLinecap="round" strokeLinejoin="round" />
-
-            {/* Dashed guide path */}
+            {/* Dashed guide */}
             <path d={allStrokes} data-guide="true" fill="none"
-              stroke="rgba(255,255,255,0.2)" strokeWidth="3"
+              stroke="rgba(0,209,102,0.35)" strokeWidth="3"
               strokeLinecap="round" strokeLinejoin="round"
               strokeDasharray="10 8" />
-
-            {/* Pulsing start dots */}
+            {/* Start dots */}
             {letterData.strokes.map((stroke, i) => {
               const tempPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
               tempPath.setAttribute('d', stroke);
@@ -271,18 +308,21 @@ export default function AlphabetTracer() {
               const startPt = tempPath.getPointAtLength(0);
               document.body.removeChild(tempPath);
               return (
-                <circle key={i} cx={startPt.x} cy={startPt.y} r="7" fill="#00D166" opacity="0.8">
-                  <animate attributeName="opacity" values="0.8;0.2;0.8" dur="2s" repeatCount="indefinite" />
-                </circle>
+                <g key={i}>
+                  <circle cx={startPt.x} cy={startPt.y} r="10" fill="rgba(0,209,102,0.15)" />
+                  <circle cx={startPt.x} cy={startPt.y} r="6"  fill="#00D166">
+                    <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
+                  </circle>
+                </g>
               );
             })}
           </svg>
 
-          {/* Canvas Drawing Layer */}
+          {/* Drawing Canvas */}
           <canvas
             ref={canvasRef}
-            className="absolute inset-0 w-full h-full rounded-3xl cursor-crosshair"
-            style={{ touchAction: 'none' }}
+            className="absolute inset-0 w-full h-full rounded-3xl"
+            style={{ touchAction: 'none', cursor: 'crosshair' }}
             onMouseDown={startDraw}
             onMouseMove={draw}
             onMouseUp={stopDraw}
@@ -292,162 +332,149 @@ export default function AlphabetTracer() {
             onTouchEnd={stopDraw}
           />
 
-          {/* Clear button — top-right of canvas */}
-          <button
+          {/* Clear button */}
+          <motion.button
+            whileHover={{ scale: 1.12, rotate: -8 }}
+            whileTap={{ scale: 0.9 }}
             onClick={resetAll}
-            className="absolute -top-4 -right-4 p-2.5 bg-red-500/80 backdrop-blur-md text-white rounded-xl
-                       shadow-lg hover:bg-red-600 transition-all border border-white/10 z-10"
+            className="absolute -top-4 -right-4 p-2.5 text-white rounded-xl z-10 font-black text-sm flex items-center gap-1.5"
+            style={{ background: 'linear-gradient(135deg,#FF6B6B,#FF8E8E)', boxShadow: '0 4px 16px rgba(255,107,107,0.4)' }}
           >
-            <RefreshCcw size={18} />
-          </button>
+            <RefreshCcw size={15} /> Clear
+          </motion.button>
         </div>
 
-        {/* Bottom hint */}
-        <p className="absolute bottom-5 text-gray-600 text-xs font-medium tracking-wide">
-          Draw inside the <span className="text-white/50">dashed path</span> · start from the <span className="text-[#00D166]/70">green dots</span>
+        <p className="absolute bottom-4 text-white/30 text-sm font-medium">
+          Start from the <span className="text-[#00D166]/70 font-bold">green dots</span>
+          {' '}&middot; draw inside the <span className="text-white/50 font-bold">dashed path</span>
         </p>
       </div>
 
-      {/* ════════════════════════════════════════
-          RIGHT PANEL — 35% — Control & Info
-      ════════════════════════════════════════ */}
-      <div className="flex-[35] h-full flex flex-col items-center justify-between p-6 gap-4">
+      {/* RIGHT: Controls */}
+      <div className="flex-[35] h-full flex flex-col items-center p-5 gap-3 overflow-hidden">
 
-        {/* ── Letter Navigation ── */}
-        <div className="w-full flex items-center justify-between pt-2">
-          <button
+        {/* Navigation */}
+        <div className="w-full flex-shrink-0 flex items-center justify-between">
+          <motion.button
+            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
             onClick={() => setCurrentIdx(i => Math.max(0, i - 1))}
-            className="p-2.5 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all"
+            className="p-2.5 rounded-xl text-white"
+            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
           >
-            <ChevronLeft size={20} />
-          </button>
-          <span className="text-xs text-[#00D166] font-bold tracking-widest">
-            {currentIdx + 1} / {alphabet.length}
-          </span>
+            <ChevronLeft size={18} />
+          </motion.button>
 
-          {/* Next → or Restart if on Z */}
+          <div className="text-center">
+            <div className="text-white font-black text-sm">
+              {currentIdx + 1} <span className="text-white/40">of</span> {alphabet.length}
+            </div>
+            <div className="text-[#00D166] text-[10px] font-bold">letters</div>
+          </div>
+
           {currentIdx < alphabet.length - 1 ? (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
               onClick={() => setCurrentIdx(i => i + 1)}
-              className="p-2.5 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all"
+              className="p-2.5 rounded-xl text-white"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
             >
-              <ChevronRight size={20} />
-            </button>
+              <ChevronRight size={18} />
+            </motion.button>
           ) : (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
               onClick={() => { setCurrentIdx(0); resetAll(); }}
-              className="p-2 rounded-2xl bg-[#00D166]/20 border border-[#00D166]/40 text-[#00D166] hover:bg-[#00D166]/30 transition-all"
-              title="Start Over from A"
+              className="p-2.5 rounded-xl"
+              style={{ background: 'rgba(0,209,102,0.2)', border: '1px solid rgba(0,209,102,0.4)', color: '#00D166' }}
             >
-              <RotateCcw size={20} />
-            </button>
+              <RotateCcw size={18} />
+            </motion.button>
           )}
         </div>
 
-        {/* ── Z Completion Banner ── */}
-        <AnimatePresence>
-          {currentIdx === alphabet.length - 1 && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="w-full rounded-2xl bg-[#00D166]/10 border border-[#00D166]/25 px-4 py-3 flex flex-col items-center gap-1"
-            >
-              <span className="text-xl">🎉</span>
-              <p className="text-[#00D166] font-black text-sm text-center leading-tight">You finished the alphabet!</p>
-              <button
-                onClick={() => { setCurrentIdx(0); resetAll(); }}
-                className="mt-1 px-5 py-1.5 bg-[#00D166] text-white text-xs font-black rounded-xl
-                           shadow-[0_0_12px_rgba(0,209,102,0.3)] hover:shadow-[0_0_20px_rgba(0,209,102,0.5)] transition-all"
-              >
-                Start Over from A
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ── Reference Letter ── */}
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 w-full">
-          <p className="text-gray-500 text-xs font-semibold tracking-widest uppercase">Reference</p>
+        {/* Reference letter preview - flex-1 fills remaining space */}
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-2 w-full">
+          <p className="text-white/35 text-[10px] font-bold uppercase tracking-widest flex-shrink-0">
+            HOW IT LOOKS
+          </p>
           <div
-            className="w-full aspect-square max-w-[200px] rounded-3xl flex items-center justify-center
-                       bg-white/3 border border-white/8 relative overflow-hidden"
+            className="w-full rounded-2xl flex items-center justify-center overflow-hidden flex-1 min-h-0"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
           >
-            {/* Reference SVG — solid, readable */}
-            <svg
-              viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
-              className="w-[85%] h-[85%]"
-              preserveAspectRatio="xMidYMid meet"
-            >
+            <svg viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`} className="w-[80%] h-[80%]" preserveAspectRatio="xMidYMid meet">
               <path d={allStrokes} fill="none"
-                stroke="rgba(255,255,255,0.65)" strokeWidth="18"
+                stroke="rgba(255,255,255,0.7)" strokeWidth="18"
                 strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <div className="absolute inset-0 rounded-3xl border border-[#00D166]/10" />
           </div>
-
-          {/* Big letter label */}
-          {/* <div className="text-8xl font-black text-white/5 select-none leading-none tracking-tighter mt-1">
-            {letter}
-          </div> */}
         </div>
 
-        {/* ── Completion Bar ── */}
-        <div className="w-full space-y-2">
+        {/* Progress bar */}
+        <div className="w-full flex-shrink-0 space-y-1">
           <div className="flex justify-between text-xs font-bold">
-            <span className="text-gray-500">Completion</span>
-            <span className="text-[#00D166]">{progress}%</span>
+            <span className="text-white/40">Progress</span>
+            <span style={{ color: '#00D166' }}>{progress}% &nbsp;&#x1F3AF;</span>
           </div>
-          <div className="h-3 bg-white/5 rounded-full overflow-hidden border border-white/5">
+          <div className="h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
             <motion.div
-              className="h-full bg-gradient-to-r from-[#00D166] to-[#00FF88] rounded-full"
+              className="h-full rounded-full"
               animate={{ width: `${progress}%` }}
               transition={{ type: 'spring', damping: 20 }}
+              style={{ background: 'linear-gradient(90deg,#00D166,#00FF88,#FFD93D)' }}
             />
           </div>
         </div>
 
-        {/* ── Check Button ── */}
+        {/* Check button */}
         <motion.button
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.96 }}
           onClick={checkAccuracy}
-          disabled={drawnPoints.current.length < 5}
-          className="w-full py-4 bg-[#00D166] text-white font-black text-base rounded-2xl
-                     shadow-[0_0_25px_rgba(0,209,102,0.3)] hover:shadow-[0_0_40px_rgba(0,209,102,0.5)]
-                     transition-all disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          disabled={drawnPoints.current.length < 5 || saving}
+          className="w-full flex-shrink-0 py-3 font-black text-base rounded-xl flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          style={{
+            background: 'linear-gradient(135deg,#00D166,#00FF88)',
+            boxShadow: '0 4px 20px rgba(0,209,102,0.4)',
+            color: '#004d25',
+          }}
         >
-          <Star size={20} />
-          Check My Writing!
+          {saving
+            ? <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}>&#x23F3;</motion.span>
+            : <><Star size={18} fill="currentColor" /> Check My Writing!</>}
         </motion.button>
 
-        {/* ── Result Panel ── */}
+        {/* Result - compact row */}
         <AnimatePresence>
           {result && (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              className="w-full rounded-3xl bg-white/4 border border-white/8 p-5 flex flex-col items-center gap-2 backdrop-blur-sm"
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.85 }}
+              className="w-full flex-shrink-0 rounded-2xl p-3 flex items-center gap-3"
+              style={{ background: `${scoreColor}12`, border: `1.5px solid ${scoreColor}35` }}
             >
-              <div className="text-3xl">{result.emoji}</div>
-              <div className="text-5xl font-black text-white leading-none">
-                {result.score}<span className="text-xl text-[#00D166]">%</span>
-              </div>
-              <div className="text-base font-bold text-[#00D166]">{result.label}</div>
-              <p className="text-gray-500 text-xs text-center">Keep practicing — you're doing great!</p>
-              <button
-                onClick={resetAll}
-                className="mt-1 px-6 py-2 bg-white/8 border border-white/10 text-white/70 text-sm font-bold rounded-xl hover:bg-white/15 hover:text-white transition-all"
+              <motion.div
+                animate={{ scale: [1, 1.25, 1], rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 0.5 }}
+                className="text-3xl flex-shrink-0"
               >
-                Try Again
+                {result.emoji}
+              </motion.div>
+              <div className="flex-1 min-w-0">
+                <div className="text-2xl font-black leading-none" style={{ color: scoreColor }}>
+                  {result.score}<span className="text-base text-white/40">%</span>
+                </div>
+                <div className="text-xs font-black" style={{ color: scoreColor }}>{result.label}</div>
+              </div>
+              <button onClick={resetAll}
+                className="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-black text-white/50 hover:text-white transition-colors"
+                style={{ background: 'rgba(255,255,255,0.07)' }}
+              >
+                Retry
               </button>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Spacer when no result */}
-        {!result && <div className="h-4" />}
       </div>
     </div>
   );

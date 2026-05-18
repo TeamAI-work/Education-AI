@@ -15,16 +15,15 @@ All protocols apply across sessions and must be followed automatically.
 2. **Update `docs/Tasks.md`** — Check off all tasks completed in the session.
 3. **Update the session `walkthrough.md`** artifact — Document what was built with technical detail.
 4. **Update the session `task.md`** artifact — Reflect current task statuses.
-5. **Give the user a brief 3–4 point summary of today's completed work** in the chat response. This summary must be concise, plain-English, and highlight only the most impactful things done.
+5. **Generate a High-Fidelity Daily Engineering Progress Report** designed for a Reporting Head. 
 
-### Summary Format (mandatory)
-After updating all files, end the response with:
+### Report Format (Mandatory)
+The chat response must end with a structured report of **EXACTLY 3 high-impact lines**:
+- **Line 1 (Infrastructure)**: High-level overview of core achievements and data/backend milestones.
+- **Line 2 (Technical)**: Deep dive into architecture, performance (60 FPS, GPU), and engineering logic.
+- **Line 3 (Impact/Next)**: Summary of business value delivered and clear transition to the next phase.
 
-> **Today's Progress Summary:**
-> 1. [Completed item 1 — one sentence]
-> 2. [Completed item 2 — one sentence]
-> 3. [Completed item 3 — one sentence]
-> *(optional 4th point if significant)*
+**Tone**: Professional, technical, and high-impact. Keep it extremely concise but dense with technical achievements.
 
 ---
 
