@@ -158,7 +158,7 @@ function uuidv4() {
  * Get or create a student profile using localStorage (no Supabase Auth required).
  * Directly inserts into the profiles table using a self-generated UUID.
  */
-export async function getOrCreateProfile({ name, avatar, gradeGroup = '1-4' }) {
+export async function getOrCreateProfile({ name, avatar, gradeGroup = '1-4', password = null }) {
   // Check for existing profile stored locally
   let userId = localStorage.getItem('edu_ai_user_id');
 
@@ -171,29 +171,60 @@ export async function getOrCreateProfile({ name, avatar, gradeGroup = '1-4' }) {
     if (data) return data;
   }
 
-  // Generate a new UUID for this student
-  userId = uuidv4();
+  // 1. Standardize a system email for the student to use Supabase Auth securely
+  const email = `${name.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}@student.edu.ai`;
+  const safePassword = password || 'default-secure-pass-123'; // Fallback for level 1 quick-starts
 
-  // Insert profile (requires public insert policy - see schema_patch.sql)
-  const { data: profile, error } = await supabase
+  // 2. Register in Supabase auth.users DB
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email,
+    password: safePassword,
+  });
+
+  if (authError) {
+    console.error('Auth User creation error:', authError.message);
+    throw new Error(`Auth Error: ${authError.message}`);
+  }
+
+  // Use the UUID provided natively by Supabase Auth!
+  userId = authData.user.id;
+
+  // 3. Prepare custom profile payload for the "profiles" table
+  const insertPayload = {
+    id: userId,
+    full_name: name.trim(),
+    grade_group: gradeGroup,
+    avatar_url: avatar || '🧒',
+    created_at: new Date().toISOString(),
+  };
+
+  if (password) {
+    insertPayload.password = password;
+  }
+
+  // 4. Perform insert into profiles
+  let { data: profile, error } = await supabase
     .from('profiles')
-    .insert({
-      id: userId,
-      full_name: name,
-      grade_group: gradeGroup,
-      avatar_url: avatar || '🧒',
-      created_at: new Date().toISOString(),
-    })
+    .insert(insertPayload)
     .select()
     .single();
 
+  // Handle fallback if the 'password' column doesn't exist yet
+  if (error && error.message && (error.message.includes('password') || error.code === 'PGRST204')) {
+    console.warn("Supabase relation 'profiles' does not have 'password' column. Falling back to password-less profile creation.");
+    delete insertPayload.password;
+    const fallbackRes = await supabase
+      .from('profiles')
+      .insert(insertPayload)
+      .select()
+      .single();
+    profile = fallbackRes.data;
+    error = fallbackRes.error;
+  }
+
   if (error) {
     console.error('Profile insert error:', error.message);
-    // Return a local-only profile as fallback so the app still works
-    const fallback = { id: userId, full_name: name, grade_group: gradeGroup, avatar_url: avatar || '🧒' };
-    localStorage.setItem('edu_ai_user_id', userId);
-    localStorage.setItem('edu_ai_profile', JSON.stringify(fallback));
-    return fallback;
+    throw new Error(error.message);
   }
 
   // Initialize streak row
@@ -202,6 +233,7 @@ export async function getOrCreateProfile({ name, avatar, gradeGroup = '1-4' }) {
     current_streak: 1,
     longest_streak: 1,
     last_active_date: new Date().toISOString().slice(0, 10),
+    active_dates: [new Date().toISOString().slice(0, 10)]
   });
 
   localStorage.setItem('edu_ai_user_id', userId);

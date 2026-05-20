@@ -14,7 +14,7 @@ const levels = [
     title: "Adventurers",
     description: "Diving deeper into concepts with visual logic, creative writing, and problem solving.",
     range: "Grades 5 - 8",
-    path: "#"
+    path: "/level2"
   },
   {
     level: 3,
@@ -45,8 +45,8 @@ export default function Homepage() {
         >
           Intelligence Redefined
         </motion.div>
-        
-        <motion.h1 
+
+        <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -54,14 +54,14 @@ export default function Homepage() {
         >
           Choose Your Path
         </motion.h1>
-        
-        <motion.p 
+
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto font-light"
         >
-          Tailored learning journeys designed for every stage of your education. 
+          Tailored learning journeys designed for every stage of your education.
           Select your level to begin the experience.
         </motion.p>
       </div>
@@ -74,7 +74,7 @@ export default function Homepage() {
       </div>
 
       {/* Footer Branding */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1, duration: 1 }}

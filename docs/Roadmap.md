@@ -20,11 +20,12 @@
 - [ ] TTS Integration (deferred)
 - [ ] Trophy Room UI — schema done, UI placeholder only
 
-### Phase 3: Level 2 — Focus & Habit (Grade 5–8) — NOT STARTED
-- [ ] Daily Streak Calendar
-- [ ] Selection-based Note Taker
-- [ ] Persistent Digital Notebook
-- [ ] Level 2 Badges
+### Phase 3: Level 2 — Focus & Habit (Grade 5–8) — COMPLETE
+- [x] Daily Streak Calendar parsing Supabase user_streaks active_dates array
+- [x] Selection-based text highlight Note Taker engine with Floating tooltip
+- [x] Cloud-synchronized Digital Notebook with inline note editing (Title/Content)
+- [x] Persistent Supabase notebook_notes table storage and deletions
+- [x] Modularized RAG academic Chatbot subcomponents (ChatHeader, MessageItem, ChatInputForm, ActiveSourcesIndicator)
 
 ### Phase 4: Level 3 — Strategic Preparation (Grade 9–10) — NOT STARTED
 - [ ] Concept Mapping (React-Flow Mind Maps)
