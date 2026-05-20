@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Star, BookOpen, Zap, Trophy, ChevronRight, PenTool } from 'lucide-react';
@@ -45,9 +45,9 @@ const FEATURES = [
     emoji: '\u{1F3C6}',
     bg: 'linear-gradient(135deg,#FFD93D,#FFEC85)',
     shadow: 'rgba(255,217,61,0.4)',
-    status: 'soon',
-    path: null,
-    stars: '\u{1F512}',
+    status: 'ready',
+    path: 'trophy_room',
+    stars: '',
   },
 ];
 
@@ -140,10 +140,13 @@ function StatPill({ icon: Icon, label, value, color }) {
   );
 }
 
+import Level1TrophyRoom from './Level1TrophyRoom';
+
 export default function Level1Dashboard() {
   const navigate = useNavigate();
   const { profile, streak, stats, loading, needsOnboarding, createProfile, refetch } = useStudentProfile();
   const dailyLettersCount = getDailyLettersCount();
+  const [isTrophyOpen, setIsTrophyOpen] = useState(false);
 
   useEffect(() => { refetch(); }, []);
 
@@ -268,7 +271,7 @@ export default function Level1Dashboard() {
         {/* ── ACTIVITY CARDS ── */}
         <div className="px-4 pb-8 pt-2 grid grid-cols-2 gap-3 relative z-10" style={{ isolation: 'isolate' }}>
           {FEATURES.map((f, i) => (
-            <FeatureCard key={f.id} feature={f} index={i} onClick={path => navigate(path)} />
+            <FeatureCard key={f.id} feature={f} index={i} onClick={path => path === 'trophy_room' ? setIsTrophyOpen(true) : navigate(path)} />
           ))}
         </div>
       </div>
@@ -391,11 +394,12 @@ export default function Level1Dashboard() {
           {/* Feature grid */}
           <div className="grid grid-cols-2 gap-4 flex-1 min-h-0 pb-4 pt-2 px-1" style={{ overflow: 'visible' }}>
             {FEATURES.map((f, i) => (
-              <FeatureCard key={f.id} feature={f} index={i} onClick={path => navigate(path)} />
+              <FeatureCard key={f.id} feature={f} index={i} onClick={path => path === 'trophy_room' ? setIsTrophyOpen(true) : navigate(path)} />
             ))}
           </div>
         </div>
       </div>
+      <Level1TrophyRoom isOpen={isTrophyOpen} onClose={() => setIsTrophyOpen(false)} userId={profile?.id} />
     </>
   );
 }

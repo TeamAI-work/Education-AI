@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCcw, ChevronLeft, ChevronRight, Star, RotateCcw } from 'lucide-react';
 import { LETTER_PATHS, alphabet } from '../../data/letterPaths';
-import { logActivity, updateStreak } from '../../lib/gamification';
+import { logActivity, updateStreak, checkForNewBadges } from '../../lib/gamification';
+import { triggerBadgeCelebration } from '../Navigation/UnlockOverlay';
 import { getStoredUserId } from '../../lib/useStudentProfile';
 import { useNavigate } from 'react-router-dom';
 import { incrementDailyLetters } from '../../lib/cookieUtils';
@@ -276,9 +277,19 @@ export default function AlphabetTracer() {
     if (userId) {
       setSaving(true);
       await Promise.all([
-        logActivity(userId, 'alphabet_tracing', score),
+        logActivity(userId, 'alphabet_tracing', score, { letter }),
         updateStreak(userId),
       ]);
+
+      try {
+        const { newlyUnlocked } = await checkForNewBadges(userId, '1-4');
+        if (newlyUnlocked && newlyUnlocked.length > 0) {
+          triggerBadgeCelebration(newlyUnlocked);
+        }
+      } catch (badgeErr) {
+        console.warn('Error checking badges in AlphabetTracer:', badgeErr);
+      }
+
       setSaving(false);
     }
   };

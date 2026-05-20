@@ -142,3 +142,9 @@ CREATE POLICY "Users can manage their own chat messages" ON chat_messages
 -- Badges & Documents: Everyone can read
 CREATE POLICY "Everyone can view badges" ON badges FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Everyone can view documents" ON documents FOR SELECT TO authenticated USING (true);
+
+-- User Badges: Users can view their own badges and insert new ones
+CREATE POLICY "Users can view their own badges" ON user_badges 
+    FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can unlock badges" ON user_badges 
+    FOR INSERT WITH CHECK (auth.uid() = user_id);

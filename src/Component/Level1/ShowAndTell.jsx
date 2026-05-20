@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, Sparkles, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { logActivity, updateStreak, checkForNewBadges } from '../../lib/gamification';
+import { triggerBadgeCelebration } from '../Navigation/UnlockOverlay';
+import { getStoredUserId } from '../../lib/useStudentProfile';
 
 // All emojis as Unicode escapes
 const SUGGESTIONS = [
@@ -20,7 +23,22 @@ export default function ShowAndTell() {
   const handleFile = (file) => {
     if (!file?.type.startsWith('image/')) return;
     const reader = new FileReader();
-    reader.onload = e => setPreview(e.target.result);
+    reader.onload = e => {
+      setPreview(e.target.result);
+      const userId = getStoredUserId();
+      if (userId) {
+        Promise.all([
+          logActivity(userId, 'show_and_tell'),
+          updateStreak(userId)
+        ]).then(() => {
+          checkForNewBadges(userId, '1-4').then(({ newlyUnlocked }) => {
+            if (newlyUnlocked && newlyUnlocked.length > 0) {
+              triggerBadgeCelebration(newlyUnlocked);
+            }
+          });
+        }).catch(err => console.warn('Error in ShowAndTell logging:', err));
+      }
+    };
     reader.readAsDataURL(file);
   };
 

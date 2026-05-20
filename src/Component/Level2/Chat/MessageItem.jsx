@@ -26,7 +26,7 @@ export default function MessageItem({ msg }) {
           ))
         )}
 
-        {isBot && msg.sources && (
+        {isBot && msg.sources && Array.isArray(msg.sources) && msg.sources.length > 0 && (
           <div className="mt-3.5 pt-2.5 border-t border-white/5 select-none">
             <div className="flex items-center gap-1.5 text-[9px] font-bold text-white/40 uppercase tracking-widest mb-1.5">
               <FileSearch size={10} className="text-[#6666ff]" />

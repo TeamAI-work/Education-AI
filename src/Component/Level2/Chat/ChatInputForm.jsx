@@ -4,6 +4,7 @@ export default function ChatInputForm({ inputText, setInputText, isTyping, onSub
   return (
     <form onSubmit={onSubmit} className="relative flex-shrink-0 select-none">
       <input
+        autoFocus
         type="text"
         placeholder="Ask Aura (e.g. 'Explain Photosynthesis')"
         value={inputText}

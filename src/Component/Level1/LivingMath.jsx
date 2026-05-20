@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCcw, ChevronLeft, ArrowRight, Star, HelpCircle, Check } from 'lucide-react';
-import { logActivity, updateStreak } from '../../lib/gamification';
+import { logActivity, updateStreak, checkForNewBadges } from '../../lib/gamification';
+import { triggerBadgeCelebration } from '../Navigation/UnlockOverlay';
 import { getStoredUserId } from '../../lib/useStudentProfile';
 import { useNavigate } from 'react-router-dom';
 
@@ -339,6 +340,16 @@ export default function LivingMath() {
           logActivity(userId, 'living_math', 100), 
           updateStreak(userId)
         ]);
+
+        try {
+          const { newlyUnlocked } = await checkForNewBadges(userId, '1-4');
+          if (newlyUnlocked && newlyUnlocked.length > 0) {
+            triggerBadgeCelebration(newlyUnlocked);
+          }
+        } catch (badgeErr) {
+          console.warn('Error checking badges in LivingMath:', badgeErr);
+        }
+
         setSaving(false);
       }
       
