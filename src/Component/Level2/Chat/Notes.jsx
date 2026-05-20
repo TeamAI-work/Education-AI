@@ -38,14 +38,17 @@ export default function Notes({ notes = [], onDeleteNote, onUpdateNotes, activit
     return (
         <motion.section
             layout
-            initial={{ opacity: 0, x: 150 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 150 }}
-            transition={{ type: "spring", stiffness: 200, damping: 25 }}
-            className="lg:w-[40%] w-full flex flex-col gap-5 min-h-0 h-full select-none">
+            transition={{ type: 'spring', stiffness: 240, damping: 28 }}
+            className="w-full flex flex-col gap-5 min-h-0 h-full select-none">
 
             {/* Quick Realtime Capture Notebook Widget */}
-            <div className="flex-1 glass rounded-lg p-5 border border-white/10 flex flex-col min-h-0">
+            <motion.div
+                layout
+                initial={{ opacity: 0.92, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.22, ease: 'easeOut', delay: 0.05 }}
+                className="flex-1 glass rounded-lg p-5 border border-white/10 flex flex-col min-h-0"
+            >
                 <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-3 flex-shrink-0">
                     <div className="flex items-center gap-2">
                         <span className="text-xs font-black text-white uppercase tracking-wider">Workspace Notebook</span>
@@ -135,7 +138,7 @@ export default function Notes({ notes = [], onDeleteNote, onUpdateNotes, activit
                         })
                     )}
                 </div>
-            </div>
+            </motion.div>
         </motion.section>
     )
 }

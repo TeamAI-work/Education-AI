@@ -10,11 +10,12 @@ import SettingsPage from './Component/Navigation/Settings'
 import Level2Landing from './Component/Level2/Level2Landing'
 import StudyChatbot from './Component/Level2/Chat/StudyChatbot'
 import AuthPage from './Component/LandingPage/AuthPage'
-
+import UnlockOverlay from './Component/Navigation/UnlockOverlay'
 
 function App() {
   return (
     <>
+      <UnlockOverlay />
       <BrowserRouter>
         <Routes>
           {/* Home */}
