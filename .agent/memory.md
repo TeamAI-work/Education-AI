@@ -56,6 +56,9 @@ When user says "update the brain":
    - **Constraint**: NEVER mention or include changes to the "Second Brain" or its directory in any user-facing reports or Git commit messages.
    - **Constraint**: NEVER include micro changes (such as specific file names, coordinates, margins, specific paddings, element identifiers, or badge placements) in the management report. Keep it strictly focused on major, high-level structural and functional milestones.
    - **Constraint**: Keep the management report lines short, simple to read, and written in plain, clear language.
+   - **GitHub Commit Message**: A copyable, clean semantic git commit message detailing the day's changes.
+   - **High-Fidelity Daily Engineering Progress Report**: Exactly **3 high-impact lines** (1. Infrastructure/Data, 2. Technical/Architecture, 3. Impact/Next Phase).
+   - **Tone**: Professional, technical, and extremely concise. Focus on "impressing" management with dense technical keywords.
 
 ### "What phase are we in?" — Quick Reference
 Read `docs/Roadmap.md` + `docs/Tasks.md`, then report: current phase, % done, next 2 tasks.

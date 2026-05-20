@@ -22,38 +22,60 @@ export async function updateStreak(userId) {
   if (!userId) return;
   const today = new Date().toISOString().slice(0, 10);
 
-  const { data: existing } = await supabase
-    .from('user_streaks')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-
-  if (!existing) {
-    await supabase.from('user_streaks').insert({
-      user_id: userId,
-      current_streak: 1,
-      longest_streak: 1,
-      last_active_date: today,
-    });
-    return;
+  // 1. Get current local state
+  let localStreak = { current_streak: 0, longest_streak: 0, last_active_date: null };
+  try {
+    const cached = localStorage.getItem('edu_ai_streak');
+    if (cached) {
+      localStreak = JSON.parse(cached);
+    }
+  } catch (e) {
+    console.error('Error loading local streak:', e);
   }
 
-  if (existing.last_active_date === today) return;
+  // If already active today, do nothing
+  if (localStreak.last_active_date === today) return;
 
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  const isConsecutive = existing.last_active_date === yesterday;
-  const newStreak = isConsecutive ? existing.current_streak + 1 : 1;
-  const newLongest = Math.max(existing.longest_streak, newStreak);
+  const isConsecutive = localStreak.last_active_date === yesterday;
+  const newStreak = isConsecutive ? (localStreak.current_streak || 0) + 1 : 1;
+  const newLongest = Math.max(localStreak.longest_streak || 0, newStreak);
 
-  await supabase
-    .from('user_streaks')
-    .update({
-      current_streak: newStreak,
-      longest_streak: newLongest,
-      last_active_date: today,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId);
+  const updatedStreak = {
+    user_id: userId,
+    current_streak: newStreak,
+    longest_streak: newLongest,
+    last_active_date: today,
+    updated_at: new Date().toISOString()
+  };
+
+  // 2. Write to local storage immediately
+  localStorage.setItem('edu_ai_streak', JSON.stringify(updatedStreak));
+
+  // 3. Sync to Supabase
+  try {
+    const { data: existing } = await supabase
+      .from('user_streaks')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (!existing) {
+      await supabase.from('user_streaks').insert(updatedStreak);
+    } else {
+      await supabase
+        .from('user_streaks')
+        .update({
+          current_streak: newStreak,
+          longest_streak: newLongest,
+          last_active_date: today,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+    }
+  } catch (err) {
+    console.warn('updateStreak Supabase save failed, using local storage baseline:', err);
+  }
 }
 
 /**
@@ -61,12 +83,39 @@ export async function updateStreak(userId) {
  */
 export async function getStreak(userId) {
   if (!userId) return null;
-  const { data } = await supabase
-    .from('user_streaks')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-  return data;
+
+  // 1. Load local streak as baseline
+  let localStreak = { current_streak: 0, longest_streak: 0, last_active_date: null };
+  try {
+    const cached = localStorage.getItem('edu_ai_streak');
+    if (cached) {
+      localStreak = JSON.parse(cached);
+    }
+  } catch (e) {
+    console.error('Error parsing local streak:', e);
+  }
+
+  // 2. Fetch from Supabase
+  try {
+    const { data, error } = await supabase
+      .from('user_streaks')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+      
+    if (data && !error) {
+      // Sync local storage with latest remote data if remote is higher or newer
+      if (data.current_streak > localStreak.current_streak || data.last_active_date !== localStreak.last_active_date) {
+        localStreak = data;
+        localStorage.setItem('edu_ai_streak', JSON.stringify(data));
+      }
+      return data;
+    }
+  } catch (err) {
+    console.warn('getStreak Supabase load failed, using local fallback:', err);
+  }
+
+  return localStreak;
 }
 
 /**

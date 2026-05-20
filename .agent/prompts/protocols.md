@@ -15,10 +15,13 @@ All protocols apply across sessions and must be followed automatically.
 2. **Update `docs/Tasks.md`** — Check off all tasks completed in the session.
 3. **Update the session `walkthrough.md`** artifact — Document what was built with technical detail.
 4. **Update the session `task.md`** artifact — Reflect current task statuses.
-5. **Generate a High-Fidelity Daily Engineering Progress Report** designed for a Reporting Head. 
+5. **Generate a detailed summary of the day's tasks to add in a GitHub commit message** — formatted cleanly in a copyable code block.
+6. **Generate a High-Fidelity Daily Engineering Progress Report** designed for a Reporting Head. 
 
 ### Report Format (Mandatory)
-The chat response must end with a structured report of **EXACTLY 3 high-impact lines**:
+The chat response must end with:
+1. **GitHub Commit Message**: A clean, formatted, copyable code block containing a semantic Git commit message summarizing all changes made.
+2. **Management Report**: EXACTLY 3 high-impact lines for the Reporting Head:
 - **Line 1 (Infrastructure)**: High-level overview of core achievements and data/backend milestones.
 - **Line 2 (Technical)**: Deep dive into architecture, performance (60 FPS, GPU), and engineering logic.
 - **Line 3 (Impact/Next)**: Summary of business value delivered and clear transition to the next phase.
