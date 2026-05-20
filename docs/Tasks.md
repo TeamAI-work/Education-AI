@@ -27,11 +27,12 @@
 > [!TIP]
 > For granular sub-tasks, see [.agent/tasks/Phase-2-Tasks.md](file:///f:/GMS%20Work/Office%20Projects/Education-AI/.agent/tasks/Phase-2-Tasks.md)
 
-## Phase 3: Level 2 — Focus & Habit (Not Started)
-- [ ] Daily Streak Calendar
-- [ ] Selection-based Note Taker
-- [ ] Persistent Digital Notebook
-- [ ] Level 2 Consistency Badges
+## Phase 3: Level 2 — Focus & Habit (COMPLETE)
+- [x] Daily Streak Calendar (dynamic parsing of Supabase active_dates array)
+- [x] Selection-based Note Taker (highlight tooltip capture engine)
+- [x] Persistent Digital Notebook (Supabase notebook_notes cloud integration)
+- [x] Inline Edit System (edit note titles & highlighted content directly in drawer cards)
+- [x] Modular Refactoring (extracted ChatHeader, MessageItem, ChatInputForm, ActiveSourcesIndicator)
 
 > [!TIP]
 > For granular sub-tasks, see [.agent/tasks/Phase-3-Tasks.md](file:///f:/GMS%20Work/Office%20Projects/Education-AI/.agent/tasks/Phase-3-Tasks.md)

@@ -50,9 +50,9 @@ export function useStudentProfile() {
     init();
   }, [fetchRemoteData]);
 
-  const createProfile = useCallback(async ({ name, avatar }) => {
+  const createProfile = useCallback(async ({ name, avatar, gradeGroup = '1-4', password = null }) => {
     setLoading(true);
-    const created = await getOrCreateProfile({ name, avatar, gradeGroup: '1-4' });
+    const created = await getOrCreateProfile({ name, avatar, gradeGroup, password });
     if (created) {
       setProfile(created);
       localStorage.setItem('edu_ai_profile', JSON.stringify(created));

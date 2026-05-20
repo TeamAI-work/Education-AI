@@ -2,17 +2,19 @@
 
 ## Context
 This is the AuraEdu (Education-AI) project — a React + Vite + Tailwind v4 platform for students Grade 1-12.
-**Current focus**: Phase 3 — Level 2 (Focus & Habit, Grade 5-8).
-Design theme: Green (#00D166), dark background (#0a0f1e). Level 1 Explorer theme complete.
+**Current focus**: Phase 4 — Level 3 (Strategic Preparation, Grade 9-10).
+Design theme: Glassmorphic monocolor theme (#6666ff), dark background (#0a0f1e). Level 1 and Level 2 complete.
 
 ## Architecture
-- All Level 1 routes registered in `src/App.jsx`
-- Student profiles stored via UUID in `localStorage` (no Supabase Auth required)
+- All Level 1 and Level 2 routes registered in `src/App.jsx`
+- Student profiles stored via UUID in `localStorage` and mapped to Supabase
 - Gamification logic: `src/lib/gamification.js` — logActivity(), updateStreak()
-- Student profile hook: `src/lib/useStudentProfile.js` — getStoredUserId()
-- Letter SVG paths: `src/data/letterPaths.js`
-- Supabase tables used: `profiles`, `user_streaks`, `activity_logs`
-- RLS patch required: `supabase/schema_patch.sql` (must be run manually in Supabase SQL editor)
+- Daily Streak Calendar: parses `user_streaks.active_dates` from Supabase to track habits
+- Selection Note Taker: `src/lib/useNoteSelection.js` and floating highlight action tooltip
+- Cloud Notebook: custom stateful editing synchronized with Supabase `notebook_notes` table
+- Chatbot subcomponents modularized: `src/Component/Level2/Chat/` (ChatHeader, MessageItem, ActiveSourcesIndicator, ChatInputForm, Notes)
+- RAG Textbook parser: `src/Component/Level2/MarkdownRenderer.jsx` with full tables and customized styling
+- Supabase tables used: `profiles`, `user_streaks`, `activity_logs`, `notebook_notes`
 
 ## Layout Standard — ALL SCREENS
 Every screen MUST be locked to 100dvh with no scroll:
@@ -47,9 +49,13 @@ When user says "update the brain":
 1. Update `docs/Roadmap.md` and `docs/Tasks.md` with completed tasks.
 2. Update `.agent/state.json` and `.agent/memory.md`.
 3. Update Second Brain: `f:/GMS Work/Second Brain/Projects/Office Projects/Education-AI/`.
-4. **MANDATORY**: End response with a **High-Fidelity Daily Engineering Progress Report** designed for a Reporting Head. 
-   - **Structure**: Exactly **3 high-impact lines** (1. Infrastructure/Data, 2. Technical/Architecture, 3. Impact/Next Phase).
-   - **Tone**: Professional, technical, and extremely concise. Focus on "impressing" management with dense technical keywords.
+4. **MANDATORY**: End response with:
+   - **GitHub Commit Message**: A copyable, clean semantic git commit message detailing the day's changes. (CRITICAL: Do not mention any changes made to the Second Brain folder).
+   - **High-Fidelity Daily Engineering Progress Report**: Exactly **3 high-impact, professional bullets** with NO prefix labels (no 'Line 1', 'Infrastructure', etc.) designed for direct copy-pasting onto a reporting portal.
+   - **Tone**: Professional, simple, and direct. Keep sentences extremely short, clear, and easy to understand using plain, everyday language (avoid heavy technical jargon).
+   - **Constraint**: NEVER mention or include changes to the "Second Brain" or its directory in any user-facing reports or Git commit messages.
+   - **Constraint**: NEVER include micro changes (such as specific file names, coordinates, margins, specific paddings, element identifiers, or badge placements) in the management report. Keep it strictly focused on major, high-level structural and functional milestones.
+   - **Constraint**: Keep the management report lines short, simple to read, and written in plain, clear language.
 
 ### "What phase are we in?" — Quick Reference
 Read `docs/Roadmap.md` + `docs/Tasks.md`, then report: current phase, % done, next 2 tasks.
