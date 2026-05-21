@@ -210,10 +210,25 @@ export default function SettingsPage() {
     setSaving(true);
     const userId = getStoredUserId();
     if (userId) {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = new Date().toLocaleDateString('sv-SE');
       
-      // 1. Load local streak baseline
-      let localStreak = { current_streak: 0, longest_streak: 0, last_active_date: null };
+      // 1. Fetch from Supabase first if available to prevent overwriting newer DB data
+      let existing = null;
+      try {
+        const { data, error } = await supabase
+          .from('user_streaks')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+        if (data && !error) {
+          existing = data;
+        }
+      } catch (err) {
+        console.warn('Boost streak fetch failed:', err);
+      }
+
+      // 2. Load local streak baseline
+      let localStreak = { current_streak: 0, longest_streak: 0, last_active_date: null, active_dates: [] };
       try {
         const cached = localStorage.getItem('edu_ai_streak');
         if (cached) {
@@ -223,29 +238,32 @@ export default function SettingsPage() {
         console.error(e);
       }
 
-      // 2. Increment by 5 days
-      const newStreak = (localStreak.current_streak || 0) + 5;
-      const newLongest = Math.max(localStreak.longest_streak || 0, newStreak);
+      // 3. Resolve base values and increment by 5 days
+      const baseStreak = Math.max(localStreak.current_streak || 0, existing?.current_streak || 0);
+      const baseLongest = Math.max(localStreak.longest_streak || 0, existing?.longest_streak || 0);
+      
+      let mergedDates = new Set([...(localStreak.active_dates || []), ...(existing?.active_dates || [])]);
+      mergedDates.add(today);
+      const activeDatesVal = Array.from(mergedDates).sort();
+
+      const newStreak = baseStreak + 5;
+      const newLongest = Math.max(baseLongest, newStreak);
+      
       const updatedStreak = {
         user_id: userId,
         current_streak: newStreak,
         longest_streak: newLongest,
         last_active_date: today,
+        active_dates: activeDatesVal,
         updated_at: new Date().toISOString()
       };
 
-      // 3. Save locally immediately
+      // 4. Save locally immediately
       localStorage.setItem('edu_ai_streak', JSON.stringify(updatedStreak));
       setStreakVal(newStreak);
 
-      // 4. Sync to Supabase in the background
+      // 5. Sync to Supabase
       try {
-        const { data: existing } = await supabase
-          .from('user_streaks')
-          .select('*')
-          .eq('user_id', userId)
-          .single();
-
         if (existing) {
           await supabase
             .from('user_streaks')
@@ -253,6 +271,7 @@ export default function SettingsPage() {
               current_streak: newStreak,
               longest_streak: newLongest,
               last_active_date: today,
+              active_dates: activeDatesVal,
               updated_at: new Date().toISOString(),
             })
             .eq('user_id', userId);

@@ -277,8 +277,7 @@ export default function AlphabetTracer() {
     if (userId) {
       setSaving(true);
       await Promise.all([
-        logActivity(userId, 'alphabet_tracing', score, { letter }),
-        updateStreak(userId),
+        logActivity(userId, 'alphabet_tracing', score, { letter })
       ]);
 
       try {

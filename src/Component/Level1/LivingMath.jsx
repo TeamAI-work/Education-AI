@@ -337,8 +337,7 @@ export default function LivingMath() {
       if (userId) {
         setSaving(true);
         await Promise.all([
-          logActivity(userId, 'living_math', 100), 
-          updateStreak(userId)
+          logActivity(userId, 'living_math', 100)
         ]);
 
         try {

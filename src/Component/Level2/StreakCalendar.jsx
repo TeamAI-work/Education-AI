@@ -43,10 +43,16 @@ export default function StreakCalendar({ activitiesCount = 0 }) {
     }
   }, [userId]);
 
-  // Mount effect to fetch initial Supabase data
+  // Mount effect to sync the streak first, then fetch the calendar data.
   useEffect(() => {
-    fetchStreakAndLogs();
-  }, [fetchStreakAndLogs]);
+    const syncAndFetch = async () => {
+      if (userId) {
+        await updateStreak(userId);
+      }
+      await fetchStreakAndLogs();
+    };
+    syncAndFetch();
+  }, [fetchStreakAndLogs, userId]);
 
   // Reactive effect when activitiesCount increments (RAG queries or notebook saves)
   useEffect(() => {
@@ -55,8 +61,6 @@ export default function StreakCalendar({ activitiesCount = 0 }) {
         setLoading(true);
         // Log study activity in Supabase
         await logActivity(userId, 'level2_study');
-        // Update daily streak state remotely
-        await updateStreak(userId);
         // Refresh grid and counters
         await fetchStreakAndLogs();
       }
@@ -77,7 +81,7 @@ export default function StreakCalendar({ activitiesCount = 0 }) {
   };
 
   const dayList = getPast35Days();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = new Date().toLocaleDateString('sv-SE');
 
   return (
     <div className="glass rounded-3xl p-5 border border-white/10 select-none flex flex-col gap-4 relative overflow-hidden h-full">
@@ -144,7 +148,7 @@ export default function StreakCalendar({ activitiesCount = 0 }) {
           )}
 
           {dayList.map((day) => {
-            const dateKey = day.toISOString().split('T')[0];
+            const dateKey = day.toLocaleDateString('sv-SE');
             const isCompleted = streakData.completedDays[dateKey] || (dateKey === todayStr && activitiesCount > 0);
             const isToday = dateKey === todayStr;
 

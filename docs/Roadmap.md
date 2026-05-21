@@ -18,7 +18,7 @@
 - [x] No-scroll layout — all screens locked to 100dvh with flex-budget
 - [x] Emoji encoding — all emojis converted to Unicode escapes (ASCII-safe)
 - [ ] TTS Integration (deferred)
-- [ ] Trophy Room UI — schema done, UI placeholder only
+- [x] Trophy Room UI — fully functional daily task display & reset alerts
 
 ### Phase 3: Level 2 — Focus & Habit (Grade 5–8) — COMPLETE
 - [x] Daily Streak Calendar parsing Supabase user_streaks active_dates array
@@ -26,6 +26,10 @@
 - [x] Cloud-synchronized Digital Notebook with inline note editing (Title/Content)
 - [x] Persistent Supabase notebook_notes table storage and deletions
 - [x] Modularized RAG academic Chatbot subcomponents (ChatHeader, MessageItem, ChatInputForm, ActiveSourcesIndicator)
+- [x] Dynamic **Daily Tasks Reset** system (badge progress clears to 0% at midnight)
+- [x] Independent **Daily Tasks Streak Tracker** (stored in localStorage, updates on completing >= 3 daily tasks)
+- [x] **Auto-Streak on Launch** (login/activity streak advances automatically upon opening the app, removing task completion dependency)
+- [x] **Localized Timezone Standardization** (uses sv-SE date strings across all files to completely eliminate UTC offset day-shifting bugs)
 
 ### Phase 4: Level 3 — Strategic Preparation (Grade 9–10) — NOT STARTED
 - [ ] Concept Mapping (React-Flow Mind Maps)

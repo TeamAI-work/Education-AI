@@ -70,8 +70,8 @@ export default function AuthPage() {
         user_id: data.id,
         current_streak: 1,
         longest_streak: 1,
-        last_active_date: new Date().toISOString().slice(0, 10),
-        active_dates: [new Date().toISOString().slice(0, 10)]
+        last_active_date: new Date().toLocaleDateString('sv-SE'),
+        active_dates: [new Date().toLocaleDateString('sv-SE')]
       }, { onConflict: 'user_id', ignoreDuplicates: true });
 
       setSuccess(true);

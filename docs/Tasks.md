@@ -22,7 +22,7 @@
 - [x] No-Scroll Layout — all screens locked to 100dvh, flex-budget layout
 - [x] Emoji Encoding Fix — all emojis converted to Unicode escape sequences (ASCII-safe)
 - [ ] TTS Integration
-- [ ] Badges / Trophy Room UI (DB schema ready, UI placeholder)
+- [x] Badges / Trophy Room UI (Fully functional daily task display & reset alerts)
 
 > [!TIP]
 > For granular sub-tasks, see [.agent/tasks/Phase-2-Tasks.md](file:///f:/GMS%20Work/Office%20Projects/Education-AI/.agent/tasks/Phase-2-Tasks.md)
@@ -33,6 +33,10 @@
 - [x] Persistent Digital Notebook (Supabase notebook_notes cloud integration)
 - [x] Inline Edit System (edit note titles & highlighted content directly in drawer cards)
 - [x] Modular Refactoring (extracted ChatHeader, MessageItem, ChatInputForm, ActiveSourcesIndicator)
+- [x] Dynamic **Daily Tasks Reset** system (badge progress clears to 0% at midnight)
+- [x] Independent **Daily Tasks Streak Tracker** (localStorage-based, rewards completing >= 3 daily tasks)
+- [x] **Auto-Streak on Launch** (login/activity streak advances automatically upon opening the app, removing task completion dependency)
+- [x] **Localized Timezone Standardization** (uses sv-SE date strings across all files to completely eliminate UTC offset day-shifting bugs)
 
 > [!TIP]
 > For granular sub-tasks, see [.agent/tasks/Phase-3-Tasks.md](file:///f:/GMS%20Work/Office%20Projects/Education-AI/.agent/tasks/Phase-3-Tasks.md)

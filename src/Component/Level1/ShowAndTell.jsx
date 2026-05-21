@@ -28,8 +28,7 @@ export default function ShowAndTell() {
       const userId = getStoredUserId();
       if (userId) {
         Promise.all([
-          logActivity(userId, 'show_and_tell'),
-          updateStreak(userId)
+          logActivity(userId, 'show_and_tell')
         ]).then(() => {
           checkForNewBadges(userId, '1-4').then(({ newlyUnlocked }) => {
             if (newlyUnlocked && newlyUnlocked.length > 0) {

@@ -307,7 +307,7 @@ export async function sendStudyMessage({
   if (userId) {
     const matchedSubject = findRagMatch(userText);
     await logActivity(userId, 'rag_query', null, matchedSubject ? { subject: matchedSubject } : null);
-    updateStreak(userId);
+    
     setActivitiesCount((prev) => prev + 1);
 
     // Trigger badge checking with dynamic grade group
