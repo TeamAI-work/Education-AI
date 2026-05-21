@@ -13,7 +13,7 @@ export const setCookie = (name, value, days = 365) => {
 };
 
 export const getDailyLettersCount = () => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toLocaleDateString('sv-SE');
   try {
     const cookieVal = getCookie('daily_letters_done');
     if (cookieVal) {
@@ -29,7 +29,7 @@ export const getDailyLettersCount = () => {
 };
 
 export const incrementDailyLetters = (letter) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toLocaleDateString('sv-SE');
   let data = { date: today, count: 0, letters: [] };
   try {
     const cookieVal = getCookie('daily_letters_done');

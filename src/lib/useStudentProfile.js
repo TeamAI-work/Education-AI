@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getOrCreateProfile, getStreak, getActivityStats } from './gamification';
+import { getOrCreateProfile, getStreak, getActivityStats, updateStreak } from './gamification';
 
 /**
  * Custom hook to manage the current student profile.
@@ -40,6 +40,13 @@ export function useStudentProfile() {
         setNeedsOnboarding(true);
         setLoading(false);
         return;
+      }
+
+      // Automatically update user streak on app load to maintain streak on opening the app
+      try {
+        await updateStreak(userId);
+      } catch (err) {
+        console.warn('Auto streak update failed on load:', err);
       }
 
       // Profile is already hydrated from localStorage in the useState initializer.

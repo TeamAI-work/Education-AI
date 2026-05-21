@@ -23,8 +23,7 @@ function App() {
           <Route path='/auth' element={<AuthPage />} />
 
           {/* Level 1 — Explorers (Grade 1-4) */}
-          <Route path='/level1' element={<LandingLevel1 />} />
-          <Route path='/level1/dashboard' element={<Level1Dashboard />} />
+          <Route path='/level1' element={<Level1Dashboard />} />
           <Route path='/level1/interactive-tracing' element={<AlphabetTracer />} />
           <Route path='/level1/show-and-tell' element={<ShowAndTell />} />
           <Route path='/level1/living-math' element={<LivingMath />} />

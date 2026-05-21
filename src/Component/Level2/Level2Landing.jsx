@@ -5,6 +5,7 @@ import { ArrowLeft, Sparkles, BookOpen, Trophy, Flame, ChevronRight, PenTool, X 
 import { useStudentProfile } from '../../lib/useStudentProfile';
 import { useNoteSelection } from '../../lib/useNoteSelection';
 import StreakCalendar from './StreakCalendar';
+import { updateStreak } from '../../lib/gamification';
 import Notebook from './Notebook';
 import AchievementIcons from './AchievementIcons';
 import StudentOnboardingL2 from './StudentOnboardingL2';
@@ -25,24 +26,38 @@ export default function Level2Landing() {
 
   // Load profile and notes
   useEffect(() => {
-    const userId = localStorage.getItem('edu_ai_user_id');
-    if (!userId) {
-      navigate('/auth', { state: { from: '/level2' } });
-      return;
-    }
+    let cancelled = false;
 
-    refetch();
-    const savedNotes = localStorage.getItem('auraedu_level2_notes');
-    if (savedNotes) {
+    const loadLandingData = async () => {
+      const userId = localStorage.getItem('edu_ai_user_id');
+      if (!userId) {
+        navigate('/auth', { state: { from: '/level2' } });
+        return;
+      }
+
       try {
-        setNotes(JSON.parse(savedNotes));
-      } catch (e) {
+        await updateStreak(userId);
+        if (!cancelled) await refetch();
+      } catch (err) {
+        console.warn('Level 2 landing streak update failed:', err);
+      }
+
+      if (cancelled) return;
+      const savedNotes = localStorage.getItem('auraedu_level2_notes');
+      if (savedNotes) {
+        try {
+          setNotes(JSON.parse(savedNotes));
+        } catch (e) {
+          seedInitialNotes();
+        }
+      } else {
         seedInitialNotes();
       }
-    } else {
-      seedInitialNotes();
-    }
-  }, []);
+    };
+
+    loadLandingData();
+    return () => { cancelled = true; };
+  }, [navigate, refetch]);
 
   const seedInitialNotes = () => {
     const seed = [
