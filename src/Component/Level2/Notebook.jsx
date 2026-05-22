@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Search, Trash2, Edit3, Plus, Check, X, FileText } from 'lucide-react';
 
-export default function Notebook({ notes = [], onUpdateNotes, onAddActivity }) {
+export default function Notebook({ notes = [], onUpdateNotes, onAddActivity, onClose }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
@@ -26,12 +26,12 @@ export default function Notebook({ notes = [], onUpdateNotes, onAddActivity }) {
 
     const updated = [newNote, ...notes];
     onUpdateNotes(updated);
-    
+
     // Clear inputs & toggle state
     setNewTitle('');
     setNewContent('');
     setIsAdding(false);
-    
+
     if (onAddActivity) onAddActivity();
   };
 
@@ -65,40 +65,42 @@ export default function Notebook({ notes = [], onUpdateNotes, onAddActivity }) {
   };
 
   // Filter notes based on query
-  const filteredNotes = notes.filter(note => 
+  const filteredNotes = notes.filter(note =>
     note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     note.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (note.source && note.source.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
-    <div className="glass rounded-3xl p-5 border border-white/10 flex flex-col h-full select-none overflow-hidden relative">
+    <div className="glass rounded-3xl p-3.5 sm:p-5 border border-white/10 flex flex-col h-full select-none overflow-hidden relative">
       {/* Background radial glow */}
       <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-3xl opacity-15 bg-[#6666ff] pointer-events-none" />
 
       {/* Header section */}
-      <div className="flex items-center justify-between flex-shrink-0 mb-4">
+      <div className="flex items-center justify-between flex-shrink-0 mb-3 sm:mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-[#6666ff]/10 flex items-center justify-center border border-[#6666ff]/25">
-            <BookOpen size={20} className="text-[#6666ff]" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#6666ff]/10 flex items-center justify-center border border-[#6666ff]/25">
+            <BookOpen size={18} className="text-[#6666ff] sm:hidden" />
+            <BookOpen size={20} className="text-[#6666ff] hidden sm:block" />
           </div>
           <div>
-            <h3 className="text-white font-black text-base leading-tight">Digital Notebook</h3>
-            <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Review & organize ideas</p>
+            <h3 className="text-white font-black text-sm sm:text-base leading-tight">Digital Notebook</h3>
+            <p className="text-white/40 text-[9px] font-medium uppercase tracking-wider">Review & organize ideas</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+
+          <div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+              title="Close notebook"
+            >
+              <X size={16} className="text-white/50 hover:text-white transition-colors" />
+            </button>
           </div>
         </div>
 
-        {/* Add note toggle */}
-        <button
-          onClick={() => setIsAdding(!isAdding)}
-          className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-all cursor-pointer
-            ${isAdding 
-              ? 'bg-red-500/10 border-red-500/35 text-red-400 hover:bg-red-500/20' 
-              : 'bg-[#6666ff]/10 border-[#6666ff]/25 text-[#6666ff] hover:bg-[#6666ff]/20'
-            }`}
-        >
-          {isAdding ? <X size={16} /> : <Plus size={16} />}
-        </button>
       </div>
 
       {/* Search note bar */}
@@ -115,6 +117,20 @@ export default function Notebook({ notes = [], onUpdateNotes, onAddActivity }) {
         </div>
       )}
 
+      {/* Add note toggle */}
+      <div className="flex items-center justify-end gap-2 mb-2">
+        <button
+          onClick={() => setIsAdding(!isAdding)}
+          className={`w-fit px-3 rounded-xl flex items-center justify-center border transition-all cursor-pointer
+          ${isAdding
+              ? 'bg-red-500/10 border-red-500/35 text-red-400 hover:bg-red-500/20'
+              : 'bg-[#6666ff]/10 border-[#6666ff]/25 text-[#6666ff] hover:bg-[#6666ff]/20'
+            }`}
+        >
+          {isAdding ? <span className='flex justify-center items-center gap-3 py-2'> Cancle <X size={16} /></span> : <span className='flex items-center justify-center py-2 gap-3' > New Note <Plus size={18} /></span>}
+        </button>
+      </div>
+
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 overflow-y-auto pr-1 select-text">
         <AnimatePresence mode="wait">
@@ -126,9 +142,9 @@ export default function Notebook({ notes = [], onUpdateNotes, onAddActivity }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               onSubmit={handleAddNote}
-              className="flex flex-col gap-3 h-full justify-between"
+              className="flex flex-col gap-3 h-full"
             >
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 flex-1 min-h-0">
                 <input
                   type="text"
                   placeholder="Note Topic (e.g. Photosynthesis)"
@@ -137,20 +153,19 @@ export default function Notebook({ notes = [], onUpdateNotes, onAddActivity }) {
                   className="w-full bg-black/25 border border-white/5 focus:border-[#6666ff]/40 outline-none rounded-xl py-2.5 px-3.5 text-white text-xs font-black placeholder-white/20"
                   required
                 />
-                
+
                 <textarea
                   placeholder="Type your notes here or capture highlighted text from the chatbot..."
                   value={newContent}
                   onChange={(e) => setNewContent(e.target.value)}
-                  rows={6}
-                  className="w-full bg-black/25 border border-white/5 focus:border-[#6666ff]/40 outline-none rounded-xl py-2.5 px-3.5 text-white text-xs font-medium placeholder-white/20 resize-none leading-relaxed"
+                  className="w-full flex-1 min-h-[100px] bg-black/25 border border-white/5 focus:border-[#6666ff]/40 outline-none rounded-xl py-2.5 px-3.5 text-white text-xs font-medium placeholder-white/20 resize-none leading-relaxed"
                   required
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-[#6666ff] text-[#0a0f1e] font-black text-xs hover:bg-[#5252e0] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-[0_4px_12px_rgba(102,102,255,0.25)]"
+                className="w-full py-2.5 rounded-xl bg-[#6666ff] text-[#0a0f1e] font-black text-xs hover:bg-[#5252e0] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-[0_4px_12px_rgba(102,102,255,0.25)] flex-shrink-0"
               >
                 <Check size={14} /> Add to Notebook
               </button>
@@ -220,17 +235,17 @@ export default function Notebook({ notes = [], onUpdateNotes, onAddActivity }) {
                           </div>
 
                           {/* actions panel */}
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity select-none flex-shrink-0">
+                          <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity select-none flex-shrink-0">
                             <button
                               onClick={() => startEdit(note)}
-                              className="p-1.5 rounded-lg bg-white/5 hover:bg-[#6666ff]/20 text-white/40 hover:text-[#6666ff] transition-all cursor-pointer"
+                              className="p-2 md:p-1.5 rounded-lg bg-white/5 hover:bg-[#6666ff]/20 text-white/50 hover:text-[#6666ff] transition-all cursor-pointer"
                               title="Edit note"
                             >
                               <Edit3 size={12} />
                             </button>
                             <button
                               onClick={() => handleDeleteNote(note.id)}
-                              className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all cursor-pointer"
+                              className="p-2 md:p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-white/50 hover:text-red-400 transition-all cursor-pointer"
                               title="Delete note"
                             >
                               <Trash2 size={12} />

@@ -7,14 +7,14 @@ export default function Notes({ notes = [], onDeleteNote, onUpdateNotes, activit
     const [editingNoteId, setEditingNoteId] = useState(null);
     const [editTitle, setEditTitle] = useState('');
     const [editContent, setEditContent] = useState('');
-    const userId = localStorage.getItem('edu_ai_user_id');
+    // activity_logs.user_id FK → profiles.id (auto-UUID)
+    const profileId = (() => { try { const r = localStorage.getItem('edu_ai_profile'); return r ? JSON.parse(r)?.id : null; } catch { return null; } })();
 
-    // Refresh notes when activitiesCount increments (RAG queries or notebook saves)
     useEffect(() => {
-        if (notes.length > 0 && userId) {
-            logActivity(userId, 'level2_study');
+        if (notes.length > 0 && profileId) {
+            logActivity(profileId, 'level2_study');
         }
-    }, [notes.length, userId]);
+    }, [notes.length, profileId]);
 
     const startEditing = (note) => {
         setEditingNoteId(note.id);
@@ -112,20 +112,20 @@ export default function Notes({ notes = [], onDeleteNote, onUpdateNotes, activit
                                             <div className="flex items-start justify-between gap-3 select-none">
                                                 <div className="text-[10px] font-black text-white leading-tight truncate max-w-[70%]">{note.title}</div>
 
-                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                <div className="flex gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
                                                     <button
                                                         onClick={() => startEditing(note)}
-                                                        className="p-1 rounded bg-white/5 text-white/30 hover:text-[#6666ff] hover:bg-[#6666ff]/10 cursor-pointer flex-shrink-0"
+                                                        className="p-1.5 md:p-1 rounded bg-white/5 text-white/40 hover:text-[#6666ff] hover:bg-[#6666ff]/10 cursor-pointer flex-shrink-0"
                                                         title="Edit Note"
                                                     >
-                                                        <PenTool size={9} />
+                                                        <PenTool size={11} />
                                                     </button>
                                                     <button
                                                         onClick={() => onDeleteNote && onDeleteNote(note.id)}
-                                                        className="p-1 rounded bg-white/5 text-white/30 hover:text-red-400 hover:bg-red-500/10 cursor-pointer flex-shrink-0"
+                                                        className="p-1.5 md:p-1 rounded bg-white/5 text-white/40 hover:text-red-400 hover:bg-red-500/10 cursor-pointer flex-shrink-0"
                                                         title="Delete Note"
                                                     >
-                                                        <Trash2 size={9} />
+                                                        <Trash2 size={11} />
                                                     </button>
                                                 </div>
                                             </div>

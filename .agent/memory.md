@@ -8,13 +8,15 @@ Design theme: Glassmorphic monocolor theme (#6666ff), dark background (#0a0f1e).
 ## Architecture
 - All Level 1 and Level 2 routes registered in `src/App.jsx`
 - Student profiles stored via UUID in `localStorage` and mapped to Supabase
-- Gamification logic: `src/lib/gamification.js` — logActivity(), updateStreak()
+- **Two distinct IDs**: `auth.users.id` (stored as `edu_ai_user_id`) vs `profiles.id` auto-UUID (stored in `edu_ai_profile.id`). ALL Supabase table inserts (chat_sessions, user_streaks, activity_logs, notebook_notes) FK → `profiles.id`, never the auth user ID.
+- **Self-healing resolvers**: `resolveProfileId()` in `gamification.js` and `resolveUserId()` in `studyChatbotHelpers.js` — always use these on page-mount paths before any DB writes. They are async with 3-tier strategy: fast-path cache check → DB fetch + overwrite cache → offline fallback.
+- Gamification logic: `src/lib/gamification.js` — logActivity(), updateStreak(), resolveProfileId()
 - Daily Streak Calendar: parses `user_streaks.active_dates` from Supabase to track habits
-- Selection Note Taker: `src/lib/useNoteSelection.js` and floating highlight action tooltip
+- Selection Note Taker: `src/lib/useNoteSelection.js` — two separate event handlers: `handleMouseUp` (safe to call .closest()) and `handleSelectionChange` (never touches e.target, which is the Document node not an Element)
 - Cloud Notebook: custom stateful editing synchronized with Supabase `notebook_notes` table
 - Chatbot subcomponents modularized: `src/Component/Level2/Chat/` (ChatHeader, MessageItem, ActiveSourcesIndicator, ChatInputForm, Notes)
 - RAG Textbook parser: `src/Component/Level2/MarkdownRenderer.jsx` with full tables and customized styling
-- Supabase tables used: `profiles`, `user_streaks`, `activity_logs`, `notebook_notes`
+- Supabase tables used: `profiles`, `user_streaks`, `activity_logs`, `notebook_notes`, `chat_sessions`, `chat_messages`
 
 ## Layout Standard — ALL SCREENS
 Every screen MUST be locked to 100dvh with no scroll:
@@ -40,6 +42,9 @@ See unicode map in docs/Decisions.md.
 - AlphabetTracer split-screen: Left 65% canvas, Right 35% control panel
 - No global Sidebar on Level 1 landing/tracing pages — sidebar only inside Dashboard
 - Accuracy = 70% coverage + 30% precision against SVG skeleton
+- **Stale cache 409 pattern**: When `profile.id === auth.user.id` in localStorage, the cache is stale. Always resolve via the async self-healing utilities before any FK-dependent DB writes.
+- **selectionchange event**: `e.target` is the Document node, not an Element. Never call `.closest()` in a selectionchange handler.
+- **StreakCalendar profileId**: Must be resolved async in mount effect and stored in a `useRef`, not read synchronously at the top of the component.
 
 ## Protocols
 See full protocol definitions at: `.agent/prompts/protocols.md`

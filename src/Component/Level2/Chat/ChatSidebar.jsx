@@ -76,8 +76,9 @@ export default function ChatSidebar({ isOpen, setIsOpen, currentSessionId, onNew
   }, [messages, currentSessionId]);
 
   const fetchSessions = async () => {
-    const userId = localStorage.getItem('edu_ai_user_id');
-    if (!userId) return;
+    // chat_sessions.user_id FK → profiles.id (auto-UUID)
+    const profileId = (() => { try { const r = localStorage.getItem('edu_ai_profile'); return r ? JSON.parse(r)?.id : null; } catch { return null; } })();
+    if (!profileId) return;
 
     setLoading(true);
     const { data, error } = await supabase
@@ -91,7 +92,7 @@ export default function ChatSidebar({ isOpen, setIsOpen, currentSessionId, onNew
           id
         )
       `)
-      .eq('user_id', userId)
+      .eq('user_id', profileId)
       .order('created_at', { ascending: false });
 
     if (!error && data) {
@@ -105,12 +106,13 @@ export default function ChatSidebar({ isOpen, setIsOpen, currentSessionId, onNew
   const handleNewChat = async () => {
     if (hasEmptySession) return;
 
-    const userId = localStorage.getItem('edu_ai_user_id');
-    if (!userId) return;
+    // chat_sessions.user_id FK → profiles.id (auto-UUID)
+    const profileId = (() => { try { const r = localStorage.getItem('edu_ai_profile'); return r ? JSON.parse(r)?.id : null; } catch { return null; } })();
+    if (!profileId) return;
 
     const { data, error } = await supabase
       .from('chat_sessions')
-      .insert({ user_id: userId, title: 'New Chat' })
+      .insert({ user_id: profileId, title: 'New Chat' })
       .select()
       .single();
 
@@ -211,6 +213,19 @@ export default function ChatSidebar({ isOpen, setIsOpen, currentSessionId, onNew
 
   return (
     <>
+      {/* Mobile backdrop overlay for Sidebar */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.6 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 bg-black z-35 lg:hidden cursor-pointer"
+          />
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {isOpen && (
           <motion.aside
@@ -218,9 +233,9 @@ export default function ChatSidebar({ isOpen, setIsOpen, currentSessionId, onNew
             animate={{ width: 280, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="flex-shrink-0 h-full overflow-hidden"
+            className="fixed top-0 bottom-0 left-0 z-40 lg:relative lg:inset-auto lg:z-0 lg:h-full lg:flex-shrink-0 overflow-hidden"
           >
-            <div className="w-[280px] h-full flex flex-col glass border-r border-white/10 bg-[#0a0f1e]/80 backdrop-blur-xl pb-2">
+            <div className="w-[280px] h-full flex flex-col glass border-r border-white/10 bg-[#0a0f1e]/95 lg:bg-[#0a0f1e]/80 backdrop-blur-xl pb-2">
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
                 <h2 className="text-sm font-bold text-white/90">Chat History</h2>
@@ -237,7 +252,11 @@ export default function ChatSidebar({ isOpen, setIsOpen, currentSessionId, onNew
                 <button
                   onClick={handleNewChat}
                   disabled={hasEmptySession}
-                  className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-all cursor-pointer shadow-[0_4px_18px_rgba(102,102,255,0.3)] bg-gradient-to-r from-[#6666ff] to-[#4d4dff] text-[#0a0f1e] hover:scale-[1.02] active:scale-[0.98]`}
+                  className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-all shadow-[0_4px_18px_rgba(102,102,255,0.3)] bg-gradient-to-r from-[#6666ff] to-[#4d4dff] text-[#0a0f1e] ${
+                    hasEmptySession
+                      ? 'opacity-40 cursor-not-allowed pointer-events-none'
+                      : 'hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
+                  }`}
                 >
                   <Plus size={16} />
                   New Chat

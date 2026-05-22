@@ -30,6 +30,9 @@
 - [x] Independent **Daily Tasks Streak Tracker** (stored in localStorage, updates on completing >= 3 daily tasks)
 - [x] **Auto-Streak on Launch** (login/activity streak advances automatically upon opening the app, removing task completion dependency)
 - [x] **Localized Timezone Standardization** (uses sv-SE date strings across all files to completely eliminate UTC offset day-shifting bugs)
+- [x] **Mobile Responsiveness** — Level 2 Dashboard and Chat page fully responsive with slide-over overlay drawers
+- [x] **Supabase FK Hardening** — Resolved 409 Conflict errors on chat_sessions and user_streaks; implemented async self-healing resolvers (resolveProfileId, resolveUserId) across all page-mount call sites
+- [x] **useNoteSelection TypeError Fix** — Split shared event handler into dedicated mouseup and selectionchange callbacks to prevent .closest() crash on Document node
 
 ### Phase 4: Level 3 — Strategic Preparation (Grade 9–10) — NOT STARTED
 - [ ] Concept Mapping (React-Flow Mind Maps)

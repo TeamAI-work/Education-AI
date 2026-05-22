@@ -10,12 +10,7 @@ export function useNoteSelection() {
   const [coords, setCoords] = useState({ x: 0, y: 0 });
   const [showTooltip, setShowTooltip] = useState(false);
 
-  const handleSelection = useCallback((e) => {
-    // If user clicked directly on or inside the tooltip button, do not clear selection
-    if (e && e.target && e.target.closest('.note-tooltip-btn')) {
-      return;
-    }
-
+  const readSelection = useCallback(() => {
     const selection = window.getSelection();
     if (!selection) return;
 
@@ -43,6 +38,27 @@ export function useNoteSelection() {
     }
   }, []);
 
+  /**
+   * mouseup handler — e.target is always an Element here, so .closest() is safe.
+   * If the user clicked inside the tooltip button we skip processing so the
+   * tooltip does not disappear the moment they click "Add to Notebook".
+   */
+  const handleMouseUp = useCallback((e) => {
+    // e.target is guaranteed to be an Element on mouseup events
+    if (e.target instanceof Element && e.target.closest('.note-tooltip-btn')) {
+      return;
+    }
+    readSelection();
+  }, [readSelection]);
+
+  /**
+   * selectionchange handler — e.target is the Document node, NOT an Element.
+   * Never call .closest() here; just read the current selection directly.
+   */
+  const handleSelectionChange = useCallback(() => {
+    readSelection();
+  }, [readSelection]);
+
   // Explicit helper to clear active selection
   const clearSelection = useCallback(() => {
     try {
@@ -53,17 +69,16 @@ export function useNoteSelection() {
   }, []);
 
   useEffect(() => {
-    // Listen to mouseup to trigger coordinates and capture text selection
-    document.addEventListener('mouseup', handleSelection);
-    
-    // Listen to selectionchange to handle keyboard-based selections
-    document.addEventListener('selectionchange', handleSelection);
+    // mouseup: captures selection coordinates after the user finishes dragging
+    document.addEventListener('mouseup', handleMouseUp);
+    // selectionchange: handles keyboard-driven selections (Shift+Arrow etc.)
+    document.addEventListener('selectionchange', handleSelectionChange);
 
     return () => {
-      document.removeEventListener('mouseup', handleSelection);
-      document.removeEventListener('selectionchange', handleSelection);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('selectionchange', handleSelectionChange);
     };
-  }, [handleSelection]);
+  }, [handleMouseUp, handleSelectionChange]);
 
   return {
     selectedText,

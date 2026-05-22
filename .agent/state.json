@@ -1,10 +1,10 @@
 {
   "project_name": "Education-AI",
   "status": "active",
-  "phase": "Phase 3: Level 2 - Focus & Habit (COMPLETE)",
+  "phase": "Phase 3: Level 2 - Focus & Habit (COMPLETE) — Bug Hardening Session",
   "progress": 75,
-  "last_updated": "2026-05-21",
+  "last_updated": "2026-05-22",
   "created_date": "2026-05-11",
-  "current_status": "Successfully completed Phase 3 (Level 2). Decoupled the login streak from task completion to advance automatically simply by launching/opening the app. Implemented the independent Daily Task Streak system in localStorage. Standardized all system checks using Swedish machine-local time (sv-SE) to eliminate timezone date shifting bugs. Verified a successful, clean production compilation.",
+  "current_status": "Completed a full bug hardening session on Phase 3. Fixed three separate Supabase 409 FK violation errors across chat_sessions, user_streaks (dashboard, streak calendar, profile hook). Root cause was all call sites reading a stale localStorage profile.id (auth user ID) instead of the auto-generated profiles.id UUID. Fixed by implementing resolveUserId() in studyChatbotHelpers.js and resolveProfileId() in gamification.js — shared async self-healing utilities. Also fixed a runtime TypeError in useNoteSelection.js caused by selectionchange firing with e.target = Document (no .closest() method) by splitting the handler into two dedicated callbacks. All fixes verified with clean production build (0 errors). Mobile responsiveness for Level 2 dashboard and chat page fully intact.",
   "parent_agent": "Office Dude"
 }

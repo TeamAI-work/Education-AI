@@ -5,14 +5,18 @@ import { ArrowLeft, Sparkles, BookOpen, Trophy, Flame, ChevronRight, PenTool, X 
 import { useStudentProfile } from '../../lib/useStudentProfile';
 import { useNoteSelection } from '../../lib/useNoteSelection';
 import StreakCalendar from './StreakCalendar';
-import { updateStreak } from '../../lib/gamification';
+import { updateStreak, resolveProfileId } from '../../lib/gamification';
 import Notebook from './Notebook';
 import AchievementIcons from './AchievementIcons';
 import StudentOnboardingL2 from './StudentOnboardingL2';
+import Settings from './Settings';
 
 export default function Level2Landing() {
   const navigate = useNavigate();
   const { profile, streak, loading, needsOnboarding, createProfile, refetch } = useStudentProfile();
+
+  // Model States
+  const [isModel, setIsModel] = useState(false);
   
   // State for active overlay panels ('notebook', 'badges', or null)
   const [activeOverlay, setActiveOverlay] = useState(null);
@@ -29,14 +33,17 @@ export default function Level2Landing() {
     let cancelled = false;
 
     const loadLandingData = async () => {
-      const userId = localStorage.getItem('edu_ai_user_id');
-      if (!userId) {
+      const authUserId = localStorage.getItem('edu_ai_user_id');
+      if (!authUserId) {
         navigate('/auth', { state: { from: '/level2' } });
         return;
       }
 
+      // updateStreak needs profiles.id (auto-UUID), not auth user ID.
+      // resolveProfileId() heals the localStorage cache before writing.
+      const profileId = await resolveProfileId();
       try {
-        await updateStreak(userId);
+        if (profileId) await updateStreak(profileId);
         if (!cancelled) await refetch();
       } catch (err) {
         console.warn('Level 2 landing streak update failed:', err);
@@ -149,8 +156,7 @@ export default function Level2Landing() {
 
   return (
     <div 
-      className="font-sans relative flex flex-col text-white bg-[#0a0f1e]"
-      style={{ width: '100vw', height: '100dvh', overflow: 'hidden' }}
+      className="font-sans relative flex flex-col text-white bg-[#0a0f1e] w-screen h-screen lg:h-dvh overflow-hidden"
     >
       {/* Monochromatic Onboarding Overlay */}
       <AnimatePresence>
@@ -164,8 +170,8 @@ export default function Level2Landing() {
       </div>
 
       {/* ── HEADER ROW ── */}
-      <header className="relative z-10 flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-white/5 bg-black/20 backdrop-blur-md">
-        <div className="flex items-center gap-4">
+      <header className="relative z-10 flex-shrink-0 flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-white/5 bg-black/20 backdrop-blur-md">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={() => navigate('/')}
             className="p-2 rounded-xl bg-white/5 border border-white/8 text-white/70 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center cursor-pointer"
@@ -175,21 +181,24 @@ export default function Level2Landing() {
           
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black tracking-tight leading-none text-white">Adventurers Dashboard</h1>
+              <h1 className="text-base sm:text-xl font-black tracking-tight leading-none text-white">Adventurers Dashboard</h1>
               <span className="text-[9px] bg-[#6666ff]/10 border border-[#6666ff]/30 text-[#6666ff] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
                 Grades 5 - 8
               </span>
             </div>
-            <p className="text-white/40 text-xs font-medium mt-0.5">Build study consistency and master academic habits</p>
+            <p className="text-white/40 text-[10px] sm:text-xs font-medium mt-0.5 hidden sm:block">Build study consistency and master academic habits</p>
           </div>
         </div>
 
         {/* Student Avatar Widget */}
-        <div className="flex items-center gap-3 bg-white/5 border border-white/8 rounded-2xl px-4 py-2">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl bg-gradient-to-br from-[#6666ff] to-[#4d4dff] shadow-md">
+        <div 
+          onClick={() => setIsModel(true)}
+          className="flex items-center gap-2 sm:gap-3 bg-white/5 border border-white/8 rounded-xl sm:rounded-2xl p-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-white/10 transition-all select-none"
+        >
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center text-lg sm:text-xl bg-gradient-to-br from-[#6666ff] to-[#4d4dff] shadow-md flex-shrink-0">
             {profile?.avatar_url || '\u{1F9D4}'}
           </div>
-          <div>
+          <div className="hidden sm:block">
             <div className="text-white font-black text-xs leading-none">
               {profile?.full_name?.split(' ')[0] || 'Adventurer'}
             </div>
@@ -201,22 +210,22 @@ export default function Level2Landing() {
       </header>
 
       {/* ── MAIN DASHBOARD VIEWPORT ── */}
-      <main className="relative z-10 flex-1 min-h-0 p-6 grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <main className="relative z-10 flex-1 p-4 sm:p-6 overflow-y-auto lg:overflow-hidden grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* LEFT COLUMN: GREETING & NAVIGATION CARDS (60% width) */}
-        <section className="lg:col-span-3 flex flex-col gap-6 min-h-0 h-full">
+        <section className="lg:col-span-3 flex flex-col gap-4 sm:gap-6 lg:min-h-0 lg:h-full flex-shrink-0 lg:flex-shrink">
           
           {/* Greeting Area */}
           <div className="flex flex-col gap-1 flex-shrink-0">
-            <h2 className="text-2xl font-black text-white leading-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
               Hey {profile?.full_name?.split(' ')[0] || 'Adventurer'}! {'\u{1F44B}'}
             </h2>
-            <p className="text-white/50 text-sm font-medium">
+            <p className="text-white/50 text-xs sm:text-sm font-medium">
               Ready to learn? Access your specialized study toolbox below.
             </p>
           </div>
 
           {/* Features Navigation Grid */}
-          <div className="flex-1 grid grid-cols-2 gap-4 min-h-0 items-center">
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 lg:min-h-0 items-center">
             {CARDS.map((card, idx) => {
               const Icon = card.icon;
               return (
@@ -234,7 +243,7 @@ export default function Level2Landing() {
                       setActiveOverlay(card.id);
                     }
                   }}
-                  className="h-[180px] p-5 rounded-3xl relative overflow-hidden flex flex-col justify-between cursor-pointer border border-white/10 select-none"
+                  className="h-[130px] sm:h-[160px] lg:h-[180px] p-4 sm:p-5 rounded-2xl sm:rounded-3xl relative overflow-hidden flex flex-col justify-between cursor-pointer border border-white/10 select-none"
                   style={{
                     background: 'rgba(255, 255, 255, 0.04)',
                     boxShadow: `0 8px 24px ${card.shadow}`,
@@ -249,7 +258,7 @@ export default function Level2Landing() {
 
                   {/* Icon and Title */}
                   <div className="flex items-start justify-between">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl"
                       style={{
                         background: card.bg,
                         boxShadow: `0 4px 14px ${card.shadow}`
@@ -263,8 +272,8 @@ export default function Level2Landing() {
 
                   {/* Card Label and Description */}
                   <div className="flex flex-col gap-1 mt-auto">
-                    <h3 className="text-white font-black text-base leading-tight">{card.title}</h3>
-                    <p className="text-white/40 text-[11px] font-semibold leading-normal leading-tight">{card.desc}</p>
+                    <h3 className="text-white font-black text-sm sm:text-base leading-tight">{card.title}</h3>
+                    <p className="text-white/40 text-[10px] sm:text-[11px] font-semibold leading-tight">{card.desc}</p>
                   </div>
                 </motion.div>
               );
@@ -273,7 +282,7 @@ export default function Level2Landing() {
         </section>
 
         {/* RIGHT COLUMN: INTEGRATED DAILY STREAK CALENDAR (40% width) */}
-        <section className="lg:col-span-2 min-h-0 h-full">
+        <section className="lg:col-span-2 lg:min-h-0 lg:h-full">
           <StreakCalendar activitiesCount={queryCount} />
         </section>
       </main>
@@ -285,37 +294,28 @@ export default function Level2Landing() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md flex items-center justify-center p-5"
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-5"
           >
             {/* Modal Box */}
             <motion.div
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
-              className="relative w-full max-w-5xl h-[85vh] rounded-3xl overflow-hidden border border-white/10 bg-[#0a0f1e]/90 shadow-2xl flex flex-col"
+              className="relative w-full max-w-5xl h-[90vh] sm:h-[85vh] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 bg-[#0a0f1e]/90 shadow-2xl flex flex-col"
             >
-              {/* Close Button */}
-              <button
-                onClick={() => {
-                  setActiveOverlay(null);
-                  clearSelection();
-                }}
-                className="absolute top-4 right-4 z-50 p-2 rounded-xl bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
-              >
-                <X size={16} />
-              </button>
 
               {/* Renders the specific target component */}
               <div className="flex-1 min-h-0">
                 {activeOverlay === 'notebook' && (
-                  <div className="p-5 h-full min-h-0">
-                    <Notebook notes={notes} onUpdateNotes={handleUpdateNotes} onAddActivity={handleAddActivityMetric} />
+                  <div className="p-3 sm:p-5 h-full min-h-0">
+                    <Notebook notes={notes} onUpdateNotes={handleUpdateNotes} onAddActivity={handleAddActivityMetric} onClose={() => {setActiveOverlay(null); clearSelection();}}/>
                   </div>
                 )}
                 
                 {activeOverlay === 'badges' && (
-                  <div className="p-5 h-full min-h-0">
-                    <AchievementIcons 
+                  <div className="p-3 sm:p-5 h-full min-h-0">
+                    <AchievementIcons
+                      onClose={() => {setActiveOverlay(null); clearSelection();}}
                       streakCount={streak?.current_streak ?? 4} 
                       notesCount={notes.filter(n => n.id.startsWith('capture_') || n.id.startsWith('manual_')).length} 
                       queryCount={queryCount} 
@@ -325,6 +325,12 @@ export default function Level2Landing() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isModel && (
+          <Settings isModel={isModel} onClose={() => setIsModel(false)} />
         )}
       </AnimatePresence>
 

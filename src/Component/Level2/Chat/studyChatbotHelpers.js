@@ -1,5 +1,6 @@
 import { logActivity, updateStreak, checkForNewBadges } from '../../../lib/gamification';
 import { supabase } from '../../../lib/supabaseClient';
+import { fetchProfileByUserId } from '../../../lib/auth';
 import { triggerBadgeCelebration } from '../../Navigation/UnlockOverlay';
 
 
@@ -28,8 +29,64 @@ export const RAG_DATABASE = {
   }
 };
 
+/**
+ * Returns profiles.id (auto-UUID) — the FK target for all data tables.
+ * (activity_logs, notebook_notes, chat_sessions, user_badges all FK → profiles.id)
+ * Synchronous — reads only from localStorage. For guaranteed-correct reads use resolveUserId().
+ */
 export function getUserId() {
-  return localStorage.getItem('edu_ai_user_id');
+  try {
+    const raw = localStorage.getItem('edu_ai_profile');
+    return raw ? JSON.parse(raw)?.id ?? null : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Async, self-healing version of getUserId().
+ *
+ * Always use this on page-mount paths where a stale cache could cause
+ * FK violations (e.g. creating a chat session for the first time on the
+ * chatbot page after a hard refresh).
+ *
+ * 1. Fast-path: if the cached profile.id differs from the auth user ID,
+ *    the cache is already healed — return immediately.
+ * 2. Slow-path: query the DB for the correct profiles row, overwrite the
+ *    cache, then return the real auto-UUID.
+ * 3. Fallback: if the DB is unreachable return whatever is in cache (may
+ *    still be stale, but avoids crashing offline users).
+ *
+ * @returns {Promise<string|null>} profiles.id (auto-UUID) or null
+ */
+export async function resolveUserId() {
+  const authUserId = localStorage.getItem('edu_ai_user_id');
+  if (!authUserId) return null;
+
+  // Fast-path — cached id already differs from auth id (already healed)
+  try {
+    const raw = localStorage.getItem('edu_ai_profile');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.id && parsed.id !== authUserId) {
+        return parsed.id;
+      }
+    }
+  } catch { /* ignore parse errors */ }
+
+  // Slow-path — fetch fresh profile row from the database
+  try {
+    const dbProfile = await fetchProfileByUserId(authUserId);
+    if (dbProfile?.id) {
+      localStorage.setItem('edu_ai_profile', JSON.stringify(dbProfile));
+      return dbProfile.id;
+    }
+  } catch (err) {
+    console.warn('[resolveUserId] DB fetch failed, falling back to cache:', err?.message);
+  }
+
+  // Last-resort fallback: return whatever the cache has
+  return getUserId();
 }
 
 export function mapNoteRow(row) {
@@ -169,10 +226,12 @@ export async function captureNotebookSelection({ userId, selectedText }) {
 
   // Trigger badge checking with dynamic grade group
   try {
+    // Look up grade_group using profiles.user_id (auth user ID)
+    const authUserId = localStorage.getItem('edu_ai_user_id');
     const { data: profile } = await supabase
       .from('profiles')
       .select('grade_group')
-      .eq('id', userId)
+      .eq('user_id', authUserId)
       .single();
     
     const gradeGroup = profile?.grade_group || '5-8';
@@ -312,10 +371,12 @@ export async function sendStudyMessage({
 
     // Trigger badge checking with dynamic grade group
     try {
+      // Look up grade_group using profiles.user_id (auth user ID)
+      const authUserId = localStorage.getItem('edu_ai_user_id');
       const { data: profile } = await supabase
         .from('profiles')
         .select('grade_group')
-        .eq('id', userId)
+        .eq('user_id', authUserId)
         .single();
       
       const gradeGroup = profile?.grade_group || '5-8';
