@@ -37,6 +37,9 @@
 - [x] Independent **Daily Tasks Streak Tracker** (localStorage-based, rewards completing >= 3 daily tasks)
 - [x] **Auto-Streak on Launch** (login/activity streak advances automatically upon opening the app, removing task completion dependency)
 - [x] **Localized Timezone Standardization** (uses sv-SE date strings across all files to completely eliminate UTC offset day-shifting bugs)
+- [x] **Level 2 Mobile Responsiveness** — Dashboard and Chat page with slide-over drawer overlays, responsive header, touch-optimized note cards
+- [x] **Supabase FK Hardening** — Fixed 409 Conflict on chat_sessions (resolveUserId in studyChatbotHelpers.js) and user_streaks (resolveProfileId in gamification.js); guarded stale-cache fallback in useStudentProfile
+- [x] **useNoteSelection TypeError Fix** — Separated mouseup and selectionchange into dedicated handlers; selectionchange no longer calls .closest() on Document node
 
 > [!TIP]
 > For granular sub-tasks, see [.agent/tasks/Phase-3-Tasks.md](file:///f:/GMS%20Work/Office%20Projects/Education-AI/.agent/tasks/Phase-3-Tasks.md)

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Lock, Zap } from 'lucide-react';
+import { Trophy, Lock, Zap, X } from 'lucide-react';
 import { getStoredUserId } from '../../lib/useStudentProfile';
 import { supabase } from '../../lib/supabaseClient';
 import { fetchAllBadges, fetchAllUserBadges, getTasksStreak } from '../../lib/Badges';
@@ -9,9 +9,9 @@ import { fetchAllBadges, fetchAllUserBadges, getTasksStreak } from '../../lib/Ba
 // Rarity config — sourced from badge.rarity column in DB
 // ---------------------------------------------------------------------------
 const RARITY_CONFIG = {
-  common:    { color: '#C0C0C0', dim: 'rgba(192,192,192,0.10)', glow: 'rgba(192,192,192,0.25)', label: 'Common' },
-  rare:      { color: '#6666ff', dim: 'rgba(102,102,255,0.12)', glow: 'rgba(102,102,255,0.35)', label: 'Rare' },
-  legendary: { color: '#FFD700', dim: 'rgba(255,215,0,0.12)',   glow: 'rgba(255,215,0,0.5)',    label: 'Legendary' },
+  common: { color: '#C0C0C0', dim: 'rgba(192,192,192,0.10)', glow: 'rgba(192,192,192,0.25)', label: 'Common' },
+  rare: { color: '#6666ff', dim: 'rgba(102,102,255,0.12)', glow: 'rgba(102,102,255,0.35)', label: 'Rare' },
+  legendary: { color: '#FFD700', dim: 'rgba(255,215,0,0.12)', glow: 'rgba(255,215,0,0.5)', label: 'Legendary' },
 };
 
 // ---------------------------------------------------------------------------
@@ -22,11 +22,11 @@ const RARITY_CONFIG = {
 // The write path (checkForNewBadges in gamification.js) is responsible for
 // computing and updating user_badges.progress after every user action.
 // ---------------------------------------------------------------------------
-export default function AchievementIcons() {
-  const [badges,       setBadges]       = useState([]);  // all master badges for grade
+export default function AchievementIcons({ onClose }) {
+  const [badges, setBadges] = useState([]);  // all master badges for grade
   const [userBadgeMap, setUserBadgeMap] = useState({});  // badge_id → { id, progress, unlocked_at }
-  const [loading,      setLoading]      = useState(true);
-  const [taskStreak,   setTaskStreak]   = useState({ current_streak: 0, longest_streak: 0, last_completed_date: null });
+  const [loading, setLoading] = useState(true);
+  const [taskStreak, setTaskStreak] = useState({ current_streak: 0, longest_streak: 0, last_completed_date: null });
 
   async function loadData() {
     const userId = getStoredUserId();
@@ -51,8 +51,8 @@ export default function AchievementIcons() {
       const map = {};
       for (const ub of userBadgeRows) {
         map[ub.badge_id] = {
-          id:          ub.id,
-          progress:    ub.progress ?? 0,   // 0–1 fraction written by checkForNewBadges
+          id: ub.id,
+          progress: ub.progress ?? 0,   // 0–1 fraction written by checkForNewBadges
           unlocked_at: ub.unlocked_at,
         };
       }
@@ -82,39 +82,39 @@ export default function AchievementIcons() {
     };
   }, []);
 
-  const commonBadges    = badges.filter(b => b.rarity === 'common');
-  const rareBadges      = badges.filter(b => b.rarity === 'rare');
+  const commonBadges = badges.filter(b => b.rarity === 'common');
+  const rareBadges = badges.filter(b => b.rarity === 'rare');
   const legendaryBadges = badges.filter(b => b.rarity === 'legendary');
 
   // -------------------------------------------------------------------------
   // Badge card
   // -------------------------------------------------------------------------
   function BadgeCard({ badge }) {
-    const rarity   = badge.rarity in RARITY_CONFIG ? badge.rarity : 'common';
-    const cfg      = RARITY_CONFIG[rarity];
-    const ubData   = userBadgeMap[badge.id];
+    const rarity = badge.rarity in RARITY_CONFIG ? badge.rarity : 'common';
+    const cfg = RARITY_CONFIG[rarity];
+    const ubData = userBadgeMap[badge.id];
 
     // Badge state
     // - unlocked:   has a confirmed unlocked_at in user_badges → 100%
     // - inProgress: has a user_badges row with 0 < progress < 1 → show %
     // - noneYet:    no user_badges row at all → 0%
-    const unlocked   = Boolean(ubData?.unlocked_at);
+    const unlocked = Boolean(ubData?.unlocked_at);
     const rawProgress = unlocked
       ? 1
       : (ubData?.progress ?? 0);           // 0 if badge not in user_badges yet
-    const pct        = unlocked ? 100 : Math.floor(rawProgress * 100);
+    const pct = unlocked ? 100 : Math.floor(rawProgress * 100);
     const inProgress = !unlocked && pct > 0;
-    const noneYet    = !unlocked && pct === 0;
+    const noneYet = !unlocked && pct === 0;
 
     // Card styling
-    let cardBg      = 'rgba(255,255,255,0.03)';
-    let cardBorder  = 'rgba(255,255,255,0.05)';
+    let cardBg = 'rgba(255,255,255,0.03)';
+    let cardBorder = 'rgba(255,255,255,0.05)';
     let cardOpacity = 1;
     if (unlocked) {
-      cardBg     = `linear-gradient(135deg, ${cfg.dim}, rgba(0,0,0,0.18))`;
+      cardBg = `linear-gradient(135deg, ${cfg.dim}, rgba(0,0,0,0.18))`;
       cardBorder = cfg.color + '4D';
     } else if (inProgress) {
-      cardBg     = cfg.dim;
+      cardBg = cfg.dim;
       cardBorder = 'rgba(255,255,255,0.08)';
     } else {
       cardOpacity = 0.55;
@@ -225,7 +225,7 @@ export default function AchievementIcons() {
   function RaritySection({ items, cfg }) {
     if (!items || items.length === 0) return null;
     return (
-      <div style={{ marginBottom: 18, padding: '2px 6px 2px 2px' }}>
+      <div className="mb-4 sm:mb-[18px]" style={{ padding: '2px 6px 2px 2px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
           <div style={{ width: 3, height: 12, borderRadius: 99, background: cfg.color, flexShrink: 0 }} />
           <span style={{ fontSize: '0.65rem', fontWeight: 700, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -235,7 +235,7 @@ export default function AchievementIcons() {
             {items.length}
           </span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '3px 2px' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5" style={{ padding: '3px 2px' }}>
           {items.map(badge => <BadgeCard key={badge.id} badge={badge} />)}
         </div>
       </div>
@@ -246,17 +246,22 @@ export default function AchievementIcons() {
   // Render
   // -------------------------------------------------------------------------
   return (
-    <div className="glass no-scrollbar rounded-3xl p-5 border border-white/10 flex flex-col h-full overflow-hidden relative select-none">
+    <div className="glass no-scrollbar rounded-3xl p-3.5 sm:p-5 border border-white/10 flex flex-col h-full overflow-hidden relative select-none">
       <div style={{ position: 'absolute', top: -30, right: -30, width: 130, height: 130, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.20) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexShrink: 0 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, rgba(99,102,241,0.35), rgba(99,102,241,0.18))', border: '1px solid rgba(99,102,241,0.40)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(99,102,241,0.25)', flexShrink: 0 }}>
-          <Trophy size={18} style={{ color: '#a5b4fc' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexShrink: 0 }} className="flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, rgba(99,102,241,0.35), rgba(99,102,241,0.18))', border: '1px solid rgba(99,102,241,0.40)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(99,102,241,0.25)', flexShrink: 0 }}>
+            <Trophy size={18} style={{ color: '#a5b4fc' }} />
+          </div>
+          <div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#f1f5f9', lineHeight: 1.2 }}>Habit Achievements</div>
+            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.38)', marginTop: 1 }}>Your study trophies</div>
+          </div>
         </div>
-        <div>
-          <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#f1f5f9', lineHeight: 1.2 }}>Habit Achievements</div>
-          <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.38)', marginTop: 1 }}>Your study trophies</div>
+        <div className="flex group items-center gap-2 px-2 py-1 text-white/50 rounded-xl  transition-all cursor-pointer" onClick={onClose}>
+          <X size={25} className='group-hover:text-white'/>
         </div>
       </div>
 
@@ -275,7 +280,8 @@ export default function AchievementIcons() {
           }}
           className="no-scrollbar"
         >
-          <style dangerouslySetInnerHTML={{ __html: `
+          <style dangerouslySetInnerHTML={{
+            __html: `
             @keyframes legendaryPulse {
               0%, 100% { box-shadow: 0 0 10px rgba(255,215,0,0.18); border-color: rgba(255,215,0,0.35); }
               50%       { box-shadow: 0 0 26px rgba(255,215,0,0.55); border-color: rgba(255,215,0,0.7); }
@@ -335,8 +341,8 @@ export default function AchievementIcons() {
             </div>
           ) : (
             <>
-              <RaritySection items={commonBadges}    cfg={RARITY_CONFIG.common} />
-              <RaritySection items={rareBadges}      cfg={RARITY_CONFIG.rare} />
+              <RaritySection items={commonBadges} cfg={RARITY_CONFIG.common} />
+              <RaritySection items={rareBadges} cfg={RARITY_CONFIG.rare} />
               <RaritySection items={legendaryBadges} cfg={RARITY_CONFIG.legendary} />
             </>
           )}

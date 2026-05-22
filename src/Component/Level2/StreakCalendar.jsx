@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Flame, Trophy, Award } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient';
-import { logActivity, updateStreak, getStreak } from '../../lib/gamification';
+import { logActivity, updateStreak, getStreak, resolveProfileId } from '../../lib/gamification';
 
 export default function StreakCalendar({ activitiesCount = 0 }) {
   const [streakData, setStreakData] = useState({
@@ -11,17 +10,18 @@ export default function StreakCalendar({ activitiesCount = 0 }) {
     completedDays: {}
   });
   const [loading, setLoading] = useState(true);
-  const userId = localStorage.getItem('edu_ai_user_id');
+  // profileId is resolved async on mount to guarantee the correct profiles.id UUID
+  const resolvedProfileIdRef = useRef(null);
 
-  const fetchStreakAndLogs = useCallback(async () => {
-    if (!userId) {
+  const fetchStreakAndLogs = useCallback(async (profileId) => {
+    if (!profileId) {
       setLoading(false);
       return;
     }
 
     try {
       // 1. Fetch current streak data from Supabase/cache
-      const streakRow = await getStreak(userId);
+      const streakRow = await getStreak(profileId);
       
       // 2. Map the active_dates array into the completedDays dictionary
       const completed = {};
@@ -41,32 +41,36 @@ export default function StreakCalendar({ activitiesCount = 0 }) {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, []);
 
-  // Mount effect to sync the streak first, then fetch the calendar data.
+  // Mount effect: resolve the correct profiles.id UUID before any DB writes
   useEffect(() => {
     const syncAndFetch = async () => {
-      if (userId) {
-        await updateStreak(userId);
+      // Heal the cache and get the correct profiles.id (FK target for user_streaks)
+      const profileId = await resolveProfileId();
+      resolvedProfileIdRef.current = profileId;
+      if (profileId) {
+        await updateStreak(profileId);
       }
-      await fetchStreakAndLogs();
+      await fetchStreakAndLogs(profileId);
     };
     syncAndFetch();
-  }, [fetchStreakAndLogs, userId]);
+  }, [fetchStreakAndLogs]);
 
   // Reactive effect when activitiesCount increments (RAG queries or notebook saves)
   useEffect(() => {
     const recordActivity = async () => {
-      if (activitiesCount > 0 && userId) {
+      const profileId = resolvedProfileIdRef.current;
+      if (activitiesCount > 0 && profileId) {
         setLoading(true);
         // Log study activity in Supabase
-        await logActivity(userId, 'level2_study');
+        await logActivity(profileId, 'level2_study');
         // Refresh grid and counters
-        await fetchStreakAndLogs();
+        await fetchStreakAndLogs(profileId);
       }
     };
     recordActivity();
-  }, [activitiesCount, userId, fetchStreakAndLogs]);
+  }, [activitiesCount, fetchStreakAndLogs]);
 
   // Calculate past 35 days (5 rows, 7 columns) for the habit grid
   const getPast35Days = () => {
@@ -84,7 +88,7 @@ export default function StreakCalendar({ activitiesCount = 0 }) {
   const todayStr = new Date().toLocaleDateString('sv-SE');
 
   return (
-    <div className="glass rounded-3xl p-5 border border-white/10 select-none flex flex-col gap-4 relative overflow-hidden h-full">
+    <div className="glass rounded-3xl p-3.5 sm:p-5 border border-white/10 select-none flex flex-col gap-4 relative overflow-hidden h-full">
       {/* Background Glow */}
       <div className="absolute -bottom-12 -left-12 w-32 h-32 rounded-full blur-3xl opacity-20 bg-[#6666ff] pointer-events-none" />
       

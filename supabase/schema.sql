@@ -16,6 +16,37 @@ CREATE TABLE IF NOT EXISTS profiles (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+DECLARE
+    requested_grade TEXT;
+BEGIN
+    requested_grade := COALESCE(NEW.raw_user_meta_data->>'grade_group', '5-8');
+
+    INSERT INTO public.profiles (id, full_name, grade_group, avatar_url)
+    VALUES (
+        NEW.id,
+        COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1), 'Student'),
+        CASE
+            WHEN requested_grade IN ('1-4', '5-8', '9-10', '11-12') THEN requested_grade::grade_group_type
+            ELSE '5-8'::grade_group_type
+        END,
+        COALESCE(NEW.raw_user_meta_data->>'avatar_url', '🧑‍🎓')
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        full_name = EXCLUDED.full_name,
+        grade_group = EXCLUDED.grade_group,
+        avatar_url = EXCLUDED.avatar_url;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
 -- 2. Documents (Placeholder for references)
 CREATE TABLE IF NOT EXISTS documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -31,6 +62,7 @@ CREATE TABLE IF NOT EXISTS user_streaks (
     current_streak INTEGER DEFAULT 0,
     longest_streak INTEGER DEFAULT 0,
     last_active_date DATE DEFAULT CURRENT_DATE,
+    active_dates DATE[] DEFAULT ARRAY[]::DATE[],
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -116,7 +148,13 @@ ALTER TABLE badges ENABLE ROW LEVEL SECURITY;
 -- Basic Policies (Users can only see/modify their own data)
 -- Profiles: Users can view their own profile
 CREATE POLICY "Users can view their own profile" ON profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can insert their own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Users can update their own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+
+-- User Streaks: Users can manage their own streak row
+CREATE POLICY "Users can view their own streak" ON user_streaks FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own streak" ON user_streaks FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own streak" ON user_streaks FOR UPDATE USING (auth.uid() = user_id);
 
 -- Notebook Notes: Users can manage their own notes
 CREATE POLICY "Users can manage their own notes" ON notebook_notes 

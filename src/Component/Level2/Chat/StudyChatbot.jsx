@@ -15,6 +15,7 @@ import ChatSidebar from './ChatSidebar';
 import WelcomeScreen from './WelcomeScreen';
 import {
   getUserId,
+  resolveUserId,
   fetchUserNotes,
   fetchLatestChatSession,
   createChatSession,
@@ -53,10 +54,19 @@ export default function StudyChatbot() {
     }
 
     const initializeStudyChatbot = async () => {
-      const fetchedNotes = await fetchUserNotes(userId);
+      // Resolve the correct profiles.id UUID, healing stale localStorage cache
+      // BEFORE any database inserts to prevent 409 FK constraint violations.
+      const resolvedUserId = await resolveUserId();
+
+      if (!resolvedUserId) {
+        navigate('/auth', { state: { from: '/level2/chatbot' } });
+        return;
+      }
+
+      const fetchedNotes = await fetchUserNotes(resolvedUserId);
       setNotes(fetchedNotes);
 
-      const latestSession = await fetchLatestChatSession(userId);
+      const latestSession = await fetchLatestChatSession(resolvedUserId);
 
       if (latestSession?.id) {
         setCurrentSessionId(latestSession.id);
@@ -65,7 +75,7 @@ export default function StudyChatbot() {
         return;
       }
 
-      const newSession = await createChatSession(userId, 'New Chat');
+      const newSession = await createChatSession(resolvedUserId, 'New Chat');
       if (newSession?.id) {
         setCurrentSessionId(newSession.id);
       }
@@ -144,8 +154,7 @@ export default function StudyChatbot() {
 
   return (
     <div
-      className="font-sans relative flex flex-col text-white bg-[#0a0f1e]"
-      style={{ width: '100vw', height: '100dvh', overflow: 'hidden' }}
+      className="font-sans relative flex flex-col text-white bg-[#0a0f1e] w-screen h-screen lg:h-dvh overflow-hidden"
     >
       {/* Background decoration glows */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
@@ -161,7 +170,7 @@ export default function StudyChatbot() {
         <motion.main
           layout
           transition={panelTransition}
-          className="relative z-10 flex-1 min-h-0 p-5 flex flex-col lg:flex-row gap-5 overflow-hidden"
+          className="relative flex-1 min-h-0 p-3 sm:p-5 flex flex-col lg:flex-row gap-3 lg:gap-5 overflow-hidden"
         >
           {/* Chat Sidebar */}
           <ChatSidebar
@@ -177,7 +186,7 @@ export default function StudyChatbot() {
           <motion.section
             layout
             transition={panelTransition}
-            className={`${isNotebook ? 'lg:w-[60%]' : 'lg:w-full'} w-full flex flex-col min-h-0 h-full glass rounded-lg p-5 border border-white/10 relative overflow-hidden`}
+            className={`${isNotebook ? 'lg:w-[60%]' : 'lg:w-full'} w-full flex flex-col min-h-0 h-full glass rounded-2xl p-3.5 sm:p-5 pt-12 sm:pt-5 border border-white/10 relative overflow-hidden`}
           >
             {/* Sidebar toggle button */}
             <button
@@ -234,16 +243,27 @@ export default function StudyChatbot() {
             />
           </motion.section>
 
-          <AnimatePresence initial={false} mode="popLayout">
+          <AnimatePresence>
+            {isNotebook && (
+              <motion.div
+                key="notebook-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.6 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsNotebook(false)}
+                className="fixed inset-0 bg-black z-25 lg:hidden cursor-pointer"
+              />
+            )}
+
             {isNotebook && (
               <motion.div
                 key="notebook-panel"
                 layout
                 transition={panelTransition}
-                initial={{ opacity: 0, x: 28, scale: 0.98, filter: 'blur(6px)' }}
+                initial={{ opacity: 0, x: '100%', scale: 0.98, filter: 'blur(6px)' }}
                 animate={{ opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, x: 20, scale: 0.985, filter: 'blur(4px)' }}
-                className="w-full lg:w-[40%] min-h-0 h-full"
+                exit={{ opacity: 0, x: '100%', scale: 0.985, filter: 'blur(4px)' }}
+                className="fixed top-0 bottom-0 right-0 z-30 p-3 bg-[#0a0f1e]/95 lg:p-0 lg:bg-transparent lg:relative lg:inset-auto lg:z-0 w-[85vw] max-w-[420px] lg:w-[40%] min-h-0 h-full"
               >
                 <Notes 
                   notes={notes} 

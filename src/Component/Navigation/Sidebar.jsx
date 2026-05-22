@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { signOutStudent } from '../../lib/auth';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -26,6 +27,11 @@ export default function Sidebar() {
   const location = useLocation();
 
   const toggleSidebar = () => setIsOpen(!isOpen);
+
+  const handleLogout = async () => {
+    await signOutStudent();
+    navigate('/auth');
+  };
 
   return (
     <>
@@ -115,7 +121,10 @@ export default function Sidebar() {
             {isOpen && <span className="font-bold text-sm">Collapse</span>}
           </button>
 
-          <button className="w-full flex items-center gap-4 p-3 rounded-xl text-red-400/60 hover:bg-red-400/10 hover:text-red-400 transition-all mt-2">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-4 p-3 rounded-xl text-red-400/60 hover:bg-red-400/10 hover:text-red-400 transition-all mt-2"
+          >
             <LogOut size={24} />
             {isOpen && <span className="font-bold text-sm">Logout</span>}
           </button>
