@@ -13,6 +13,10 @@ import AuthPage from './Component/LandingPage/AuthPage'
 import UnlockOverlay from './Component/Navigation/UnlockOverlay'
 import { ProtectedRoute, PublicRoute } from './lib/RouteGuards'
 
+import Testlanding from './Component/LandingPage/Testlanding'
+import HexagonMenu from './Component/TestPages/HexagonMenu'
+import BentoGrid from './Component/TestPages/BentoGrid'
+
 function App() {
   return (
     <>
@@ -35,6 +39,12 @@ function App() {
 
           {/* Parents Panel & Settings */}
           <Route path='/settings' element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+
+
+          {/* Test Page */}
+          <Route path='/test' element={<Testlanding />} />
+          <Route path='/hexagon' element={<HexagonMenu />}/>
+          <Route path='/bento' element={<BentoGrid />} />
         </Routes>
       </BrowserRouter>
     </>

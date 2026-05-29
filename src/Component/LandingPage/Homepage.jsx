@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import LevelCard from './LevelCard';
+import { Button } from "@/components/ui/button";
 
 const levels = [
   {
@@ -64,6 +65,17 @@ export default function Homepage() {
           Tailored learning journeys designed for every stage of your education.
           Select your level to begin the experience.
         </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.6 }}
+          className="mt-8"
+        >
+          <Button className="bg-white text-slate-950 hover:bg-white/90">
+            shadcn Button Test
+          </Button>
+        </motion.div>
       </div>
 
       {/* Levels Grid */}
